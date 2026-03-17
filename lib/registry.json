@@ -1,0 +1,183 @@
+{
+  "version": "0.1.0",
+  "baseUrl": "https://raw.githubusercontent.com/brkpt-labs/brkpt-auth/main/lib",
+  "common": [
+    "common/constants/index.ts",
+    "common/decorators/public.decorator.ts",
+    "common/interfaces/index.ts",
+    "common/utils/index.ts"
+  ],
+  "commonDependencies": {
+    "dependencies": ["ms", "@nestjs/event-emitter"],
+    "devDependencies": ["@types/ms"]
+  },
+  "module": "brkpt-auth.module.ts",
+  "featuresTemplate": "features.ts",
+  "features": {
+    "core": {
+      "files": [
+        "features/core/guards/jwt.guard.ts",
+        "features/core/guards/jwt-refresh.guard.ts",
+        "features/core/core.controller.ts",
+        "features/core/core.feature.ts",
+        "features/core/core.port.ts",
+        "features/core/core.service.ts",
+        "features/core/core.service.spec.ts"
+      ],
+      "dependencies": ["@nestjs/jwt"],
+      "devDependencies": []
+    },
+    "credentials": {
+      "files": [
+        "features/credentials/dto/sign-in.dto.ts",
+        "features/credentials/dto/sign-up.dto.ts",
+        "features/credentials/credentials.controller.ts",
+        "features/credentials/credentials.feature.ts",
+        "features/credentials/credentials.port.ts",
+        "features/credentials/credentials.service.ts",
+        "features/credentials/credentials.service.spec.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    "oauth": {
+      "files": [
+        "features/oauth/dto/oauth.dto.ts",
+        "features/oauth/oauth.controller.ts",
+        "features/oauth/oauth.feature.ts",
+        "features/oauth/oauth.port.ts",
+        "features/oauth/oauth.service.ts",
+        "features/oauth/oauth.service.spec.ts",
+        "features/oauth/oauth.verifier.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": [],
+      "verifiers": {
+        "google": {
+          "files": ["features/oauth/verifiers/google.verifier.ts"],
+          "dependencies": ["google-auth-library"],
+          "devDependencies": []
+        },
+        "github": {
+          "files": ["features/oauth/verifiers/github.verifier.ts"],
+          "dependencies": [],
+          "devDependencies": []
+        }
+      }
+    },
+    "otp": {
+      "files": [
+        "features/otp/dto/authenticate.dto.ts",
+        "features/otp/dto/send.dto.ts",
+        "features/otp/otp.controller.ts",
+        "features/otp/otp.feature.ts",
+        "features/otp/otp.port.ts",
+        "features/otp/otp.service.ts",
+        "features/otp/otp.service.spec.ts",
+        "features/otp/otp.verifier.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": [],
+      "verifiers": {
+        "email": {
+          "files": ["features/otp/verifiers/email.verifier.ts"],
+          "dependencies": ["nodemailer"],
+          "devDependencies": ["@types/nodemailer"]
+        }
+      }
+    },
+    "magic-link": {
+      "files": [
+        "features/magic-link/dto/authenticate.dto.ts",
+        "features/magic-link/dto/send.dto.ts",
+        "features/magic-link/magic-link.controller.ts",
+        "features/magic-link/magic-link.feature.ts",
+        "features/magic-link/magic-link.port.ts",
+        "features/magic-link/magic-link.service.ts",
+        "features/magic-link/magic-link.service.spec.ts",
+        "features/magic-link/magic-link.verifier.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": [],
+      "verifiers": {
+        "email": {
+          "files": ["features/magic-link/verifiers/email.verifier.ts"],
+          "dependencies": ["nodemailer"],
+          "devDependencies": ["@types/nodemailer"]
+        }
+      }
+    },
+    "session": {
+      "files": [
+        "features/session/session.controller.ts",
+        "features/session/session.feature.ts",
+        "features/session/session.port.ts",
+        "features/session/session.service.ts",
+        "features/session/session.service.spec.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    "blacklist": {
+      "files": [
+        "features/blacklist/blacklist.guard.ts",
+        "features/blacklist/blacklist.feature.ts",
+        "features/blacklist/blacklist.port.ts",
+        "features/blacklist/blacklist.service.ts",
+        "features/blacklist/blacklist.service.spec.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    "verify-email": {
+      "files": [
+        "features/verify-email/dto/send.dto.ts",
+        "features/verify-email/dto/verify.dto.ts",
+        "features/verify-email/verify-email.controller.ts",
+        "features/verify-email/verify-email.feature.ts",
+        "features/verify-email/verify-email.guard.ts",
+        "features/verify-email/verify-email.port.ts",
+        "features/verify-email/verify-email.service.ts",
+        "features/verify-email/verify-email.service.spec.ts"
+      ],
+      "extraFiles": ["common/decorators/skip-verify-email.decorator.ts"],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    "change-password": {
+      "files": [
+        "features/change-password/dto/change.dto.ts",
+        "features/change-password/change-password.controller.ts",
+        "features/change-password/change-password.feature.ts",
+        "features/change-password/change-password.port.ts",
+        "features/change-password/change-password.service.ts",
+        "features/change-password/change-password.service.spec.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    "reset-password": {
+      "files": [
+        "features/reset-password/dto/reset.dto.ts",
+        "features/reset-password/dto/send.dto.ts",
+        "features/reset-password/reset-password.controller.ts",
+        "features/reset-password/reset-password.feature.ts",
+        "features/reset-password/reset-password.port.ts",
+        "features/reset-password/reset-password.service.ts",
+        "features/reset-password/reset-password.service.spec.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": []
+    },
+    "audit": {
+      "files": [
+        "features/audit/audit.feature.ts",
+        "features/audit/audit.port.ts",
+        "features/audit/audit.service.ts",
+        "features/audit/audit.service.spec.ts"
+      ],
+      "dependencies": [],
+      "devDependencies": []
+    }
+  }
+}

@@ -1,0 +1,25 @@
+name: 'Setup'
+description: 'Sets up repository'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check out source code
+      uses: actions/checkout@v6
+
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v5
+      with:
+        version: latest
+        run_install: false
+
+    - name: Install Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        cache: 'pnpm'
+        cache-dependency-path: 'demo/pnpm-lock.yaml'
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+      working-directory: demo

@@ -1,0 +1,40 @@
+name: Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - name: Run unit tests
+        run: pnpm test
+        working-directory: demo
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+      - name: Run e2e tests
+        run: pnpm test:e2e
+        working-directory: demo
+        env:
+          JWT_ACCESS_SECRET: JWT_ACCESS_SECRET
+          JWT_REFRESH_SECRET: JWT_REFRESH_SECRET
+          GOOGLE_CLIENT_ID: dummy
+          GOOGLE_CLIENT_SECRET: dummy
+          GITHUB_CLIENT_ID: dummy
+          GITHUB_CLIENT_SECRET: dummy
+          SMTP_HOST: dummy
+          SMTP_PORT: dummy
+          SMTP_USER: dummy
+          SMTP_PASS: dummy
+          SMTP_FROM: dummy
+          REDIS_HOST: dummy
+          REDIS_PORT: dummy
