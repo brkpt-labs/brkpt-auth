@@ -1,9 +1,9 @@
 import { ModuleMetadata, Provider, Type } from '@nestjs/common';
-import { JwtSignOptions } from '@nestjs/jwt';
 import { Request } from 'express';
+import { StringValue } from 'ms';
 
 // Core
-export type ExpiresIn = Exclude<JwtSignOptions['expiresIn'], undefined>;
+export type ExpiresIn = StringValue | number;
 
 interface EmailClient {
   host: string;
