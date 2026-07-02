@@ -3,12 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { User } from '../user.entity';
 
 /**
- * In-memory User Repository (for demo/testing)
+ * In-memory User Repository (for demo/testing only)
  *
- * Replace with real repository in production:
- * - PrismaUserRepository
- * - TypeOrmUserRepository
- * - MongoUserRepository
+ * In production, replace with your ORM's data access layer,
+ * e.g. PrismaService or TypeORM Repository.
  */
 @Injectable()
 export class MemoryUserRepository {

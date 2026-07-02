@@ -8,7 +8,7 @@ Transparent, composable, portable, hexagonal authentication for NestJS.
 
 There are three common approaches to authentication:
 
-**Managed services**: Provide an API. Auth logic and user data are fully hosted on the vendor's side. Low integration cost, but you give up data ownership and risk vendor lock-in. Core design decisions — database schema, auth state management approach (traditional session, stateless JWT, or stateful JWT), token transport (cookie or header), token field definitions — are all predetermined by the vendor. Your project has to be built around their design. Implementation details are completely opaque, leaving very little room for customization. Think of it as a black box in the cloud.
+**Managed services**: Provide an API. Auth logic and user data are fully hosted on the vendor's side. Low integration cost, but you give up data ownership and risk vendor lock-in. Core design decisions — database schema, auth state management approach (traditional session, stateless JWT, or stateful JWT), token transport (cookie or header), JWT payload structure — are all predetermined by the vendor. Your project has to be built around their design. Implementation details are completely opaque, leaving very little room for customization. Think of it as a black box in the cloud.
 
 **Self-hosted libraries**: Provide an npm package. You deploy on your own infrastructure. Data ownership is preserved. But the same fundamental problem exists: the core design is fixed and heavily abstracted, and your project still has to be built around their conventions. Customization requires understanding their internal mental model first. Anything outside their internal structure is difficult or impossible to implement, and plugin-based solutions also have limited effect. The code exists locally in node_modules, but the internals are still complex and not practical to modify or maintain. Think of it as a black box on your own machine.
 
@@ -20,7 +20,7 @@ brkpt-auth takes a different approach:
 
 - **Transparent** — full source code installed directly into your project, no compiled packages or hidden behavior, clear and readable structure, easy to modify.
 - **Composable** — add only what you need, features are independent and communicate through an event emitter with loose coupling.
-- **Non-invasive** — no assumptions about your database schema, user model, or JWT field definitions. Through the port-adapter pattern, implement the corresponding interfaces to plug brkpt-auth into your project, no changes to your existing code required.
+- **Non-invasive** — no assumptions about your database schema, user model, or JWT payload structure. Through the port-adapter pattern, implement the corresponding interfaces to plug brkpt-auth into your project, no changes to your existing code required.
 - **Portable** — business logic and adapters are separate. When moving to a new project, the core logic comes with you, only the adapters need to be rewritten.
 - **NestJS-native** — built for NestJS from the ground up, native modules, guards, decorators, and event emitter throughout, no compatibility shims.
 - **Hexagonal architecture** — services hold the fixed business logic, ports define the interfaces, adapters are yours to implement, the boundary is always clear.
