@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { RequestMetadata, SignInEvent } from '../../common/interfaces';
+import {
+  RequestMetadata,
+  SignInEvent,
+  SignUpEvent,
+} from '../../common/interfaces';
 import { CoreService } from '../core/core.service';
 import {
   BRKPT_AUTH_CREDENTIALS_PORT,
@@ -29,6 +33,13 @@ export class CredentialsService {
     }
 
     const user = await this.port.createUser(dto);
+
+    void this.eventEmitter.emitAsync('brkpt-auth.credentials.sign-up', {
+      userId: this.port.extractUserIdFromUser(user),
+      feature: 'credentials',
+      timestamp: Date.now(),
+      metadata,
+    } satisfies SignUpEvent);
 
     void this.eventEmitter.emitAsync('brkpt-auth.credentials.sign-in', {
       userId: this.port.extractUserIdFromUser(user),

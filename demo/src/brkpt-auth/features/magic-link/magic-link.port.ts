@@ -5,6 +5,8 @@ export interface MagicLinkPort<TUser = unknown> {
   getToken(token: string): Promise<string | null>;
   deleteToken(token: string): Promise<void>;
   mapTargetToProfile(method: string, target: string): object | undefined;
-  findOrCreateUserByProfile(profile: object): Promise<TUser>;
+  findOrCreateUserByProfile(
+    profile: object,
+  ): Promise<{ user: TUser; created: boolean }>;
   extractUserIdFromUser(user: TUser): unknown;
 }

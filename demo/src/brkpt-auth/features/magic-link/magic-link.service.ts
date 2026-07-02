@@ -12,6 +12,7 @@ import {
   type BrkptAuthModuleOptions,
   RequestMetadata,
   SignInEvent,
+  SignUpEvent,
   VerificationFeature,
   type VerificationSendEvent,
   type VerificationVerifyEvent,
@@ -90,7 +91,17 @@ export class MagicLinkService {
       );
     }
 
-    const user = await this.port.findOrCreateUserByProfile(profile);
+    const { user, created } =
+      await this.port.findOrCreateUserByProfile(profile);
+
+    if (created) {
+      void this.eventEmitter.emitAsync('brkpt-auth.magic-link.sign-up', {
+        userId: this.port.extractUserIdFromUser(user),
+        feature: 'magic-link',
+        timestamp: Date.now(),
+        metadata,
+      } satisfies SignUpEvent);
+    }
 
     void this.eventEmitter.emitAsync('brkpt-auth.magic-link.sign-in', {
       userId: this.port.extractUserIdFromUser(user),

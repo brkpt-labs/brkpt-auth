@@ -2,6 +2,7 @@ import { Controller, Delete, Get, Param, Req } from '@nestjs/common';
 
 import { SkipVerifyEmail } from '../../common/decorators/skip-verify-email.decorator';
 import { type BrkptAuthRequest } from '../../common/interfaces';
+import { extractRequestMetadata } from '../../common/utils';
 import { SessionService } from './session.service';
 
 // Demo only: @SkipVerifyEmail() is added here because verify-email is enabled in this demo.
@@ -19,7 +20,10 @@ export class SessionController {
 
   @Delete('others')
   async revokeOthers(@Req() req: BrkptAuthRequest) {
-    await this.sessionService.revokeOthers(req.user!);
+    await this.sessionService.revokeOthers(
+      req.user!,
+      extractRequestMetadata(req),
+    );
     return 'Other sessions revoked successfully';
   }
 
@@ -28,7 +32,11 @@ export class SessionController {
     @Req() req: BrkptAuthRequest,
     @Param('sessionId') sessionId: string,
   ) {
-    await this.sessionService.revoke(req.user!, sessionId);
+    await this.sessionService.revoke(
+      req.user!,
+      sessionId,
+      extractRequestMetadata(req),
+    );
     return 'Session revoked successfully';
   }
 }

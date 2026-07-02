@@ -5,8 +5,11 @@ import {
   type ChangePasswordEvent,
   type ResetPasswordEvent,
   type SessionAnomalyEvent,
+  type SessionManualRevokeEvent,
+  type SessionManualRevokeOthersEvent,
   type SignInEvent,
   type SignOutEvent,
+  type SignUpEvent,
   type UserDeleteEvent,
   type VerifyEmailEvent,
 } from '../../common/interfaces';
@@ -18,6 +21,11 @@ export class AuditService {
     @Inject(BRKPT_AUTH_AUDIT_PORT)
     private readonly port: AuditPort,
   ) {}
+
+  @OnEvent('brkpt-auth.*.sign-up')
+  async handleSignUp(event: SignUpEvent) {
+    await this.port.handleSignUp(event);
+  }
 
   @OnEvent('brkpt-auth.*.sign-in')
   async handleSignIn(event: SignInEvent) {
@@ -47,6 +55,16 @@ export class AuditService {
   @OnEvent('brkpt-auth.session.anomaly')
   async handleSessionAnomaly(event: SessionAnomalyEvent) {
     await this.port.handleSessionAnomaly(event);
+  }
+
+  @OnEvent('brkpt-auth.session.manual-revoke')
+  async handleSessionManualRevoke(event: SessionManualRevokeEvent) {
+    await this.port.handleSessionManualRevoke(event);
+  }
+
+  @OnEvent('brkpt-auth.session.manual-revoke-others')
+  async handleSessionManualRevokeOthers(event: SessionManualRevokeOthersEvent) {
+    await this.port.handleSessionManualRevokeOthers(event);
   }
 
   @OnEvent('brkpt-auth.user.delete')

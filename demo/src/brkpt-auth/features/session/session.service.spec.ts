@@ -24,14 +24,12 @@ const mockSessionData: SessionData = {
 const mockPort: jest.Mocked<SessionPort> = {
   create: jest.fn().mockResolvedValue(undefined),
   exists: jest.fn().mockResolvedValue(true),
-  findById: jest
-    .fn()
-    .mockImplementation(() =>
-      Promise.resolve({
-        ...mockSessionData,
-        metadata: { ...mockSessionData.metadata },
-      }),
-    ),
+  findById: jest.fn().mockImplementation(() =>
+    Promise.resolve({
+      ...mockSessionData,
+      metadata: { ...mockSessionData.metadata },
+    }),
+  ),
   update: jest.fn().mockResolvedValue(undefined),
   delete: jest.fn().mockResolvedValue(undefined),
   addToUserIndex: jest.fn().mockResolvedValue(undefined),
@@ -291,6 +289,15 @@ describe('SessionService', () => {
         ForbiddenException,
       );
     });
+
+    it('should emit manual-revoke event after revoking session', async () => {
+      await service.revoke({ sub: 1 }, 'session-1');
+
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        'brkpt-auth.session.manual-revoke',
+        expect.objectContaining({ sessionId: 'session-1', userId: 1 }),
+      );
+    });
   });
 
   describe('revokeOthers', () => {
@@ -309,6 +316,15 @@ describe('SessionService', () => {
       expect(mockEventEmitter.emitAsync).not.toHaveBeenCalledWith(
         'brkpt-auth.session.revoke',
         { sessionId: 'session-1' },
+      );
+    });
+
+    it('should emit manual-revoke-others event after revoking other sessions', async () => {
+      await service.revokeOthers({ sub: 1, sid: 'session-1' });
+
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        'brkpt-auth.session.manual-revoke-others',
+        expect.objectContaining({ userId: 1 }),
       );
     });
   });

@@ -117,6 +117,19 @@ export interface SessionAnomalyEvent {
   current: string;
 }
 
+export interface SessionManualRevokeEvent {
+  sessionId: string;
+  userId: unknown;
+  timestamp: number;
+  metadata?: RequestMetadata;
+}
+
+export interface SessionManualRevokeOthersEvent {
+  userId: unknown;
+  timestamp: number;
+  metadata?: RequestMetadata;
+}
+
 // Verification
 export type VerificationFeature = 'verifyEmail' | 'resetPassword';
 
@@ -142,6 +155,13 @@ export interface UserDeleteEvent {
 
 // Auth Events
 export type AuthFeature = 'credentials' | 'oauth' | 'otp' | 'magic-link';
+
+export interface SignUpEvent {
+  userId: unknown;
+  feature: AuthFeature;
+  timestamp: number;
+  metadata?: RequestMetadata;
+}
 
 export interface SignInEvent {
   userId: unknown;

@@ -38,18 +38,24 @@ export class OtpAdapter implements OtpPort<User> {
     }
   }
 
-  async findOrCreateUserByProfile(profile: UserProfile): Promise<User> {
-    const user = await this.userRepo.findOne((u) => u.email === profile.email);
-    if (user) {
-      return user;
+  async findOrCreateUserByProfile(
+    profile: UserProfile,
+  ): Promise<{ user: User; created: boolean }> {
+    const existing = await this.userRepo.findOne(
+      (u) => u.email === profile.email,
+    );
+    if (existing) {
+      return { user: existing, created: false };
     }
 
-    return this.userRepo.create({
+    const user = await this.userRepo.create({
       email: profile.email,
       name: profile.name,
       password: '',
       emailVerified: false,
     });
+
+    return { user, created: true };
   }
 
   extractUserIdFromUser(user: User): number {

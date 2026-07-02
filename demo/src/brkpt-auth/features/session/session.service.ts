@@ -7,14 +7,17 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
-import {
+import type {
+  RequestMetadata,
   SessionAnomalyEvent,
-  type SessionCreateEvent,
-  type SessionRefreshEvent,
-  type SessionRevokeEvent,
-  type SessionRevokeOthersEvent,
-  type SessionValidateEvent,
-  type UserDeleteEvent,
+  SessionCreateEvent,
+  SessionManualRevokeEvent,
+  SessionManualRevokeOthersEvent,
+  SessionRefreshEvent,
+  SessionRevokeEvent,
+  SessionRevokeOthersEvent,
+  SessionValidateEvent,
+  UserDeleteEvent,
 } from '../../common/interfaces';
 import { BRKPT_AUTH_SESSION_PORT, type SessionPort } from './session.port';
 
@@ -152,7 +155,11 @@ export class SessionService {
     return sessions.filter((s) => s !== null);
   }
 
-  async revoke(payload: Record<string, unknown>, sessionId: string) {
+  async revoke(
+    payload: Record<string, unknown>,
+    sessionId: string,
+    metadata?: RequestMetadata,
+  ) {
     const session = await this.port.findById(sessionId);
     if (!session) {
       throw new NotFoundException('Session not found');
@@ -166,9 +173,19 @@ export class SessionService {
     await this.eventEmitter.emitAsync('brkpt-auth.session.revoke', {
       sessionId,
     } satisfies SessionRevokeEvent);
+
+    void this.eventEmitter.emitAsync('brkpt-auth.session.manual-revoke', {
+      sessionId,
+      userId,
+      timestamp: Date.now(),
+      metadata,
+    } satisfies SessionManualRevokeEvent);
   }
 
-  async revokeOthers(payload: Record<string, unknown>) {
+  async revokeOthers(
+    payload: Record<string, unknown>,
+    metadata?: RequestMetadata,
+  ) {
     const userId = this.port.extractUserIdFromJwtPayload(payload);
     const sessionIds = await this.port.getUserIndexSessionIds(userId);
     await Promise.all(
@@ -179,6 +196,15 @@ export class SessionService {
             sessionId: id,
           } satisfies SessionRevokeEvent),
         ),
+    );
+
+    void this.eventEmitter.emitAsync(
+      'brkpt-auth.session.manual-revoke-others',
+      {
+        userId,
+        timestamp: Date.now(),
+        metadata,
+      } satisfies SessionManualRevokeOthersEvent,
     );
   }
 }

@@ -4,8 +4,11 @@ import {
   type ChangePasswordEvent,
   type ResetPasswordEvent,
   type SessionAnomalyEvent,
+  SessionManualRevokeEvent,
+  SessionManualRevokeOthersEvent,
   type SignInEvent,
   type SignOutEvent,
+  SignUpEvent,
   type UserDeleteEvent,
   type VerifyEmailEvent,
 } from '../../common/interfaces';
@@ -21,6 +24,20 @@ export class AuditAdapter implements AuditPort {
         ...fields,
       }),
     );
+  }
+
+  handleSignUp({
+    userId,
+    feature,
+    timestamp,
+    metadata,
+  }: SignUpEvent): Promise<void> | void {
+    this.log('sign_up', {
+      userId: String(userId),
+      feature,
+      timestamp: new Date(timestamp).toISOString(),
+      metadata,
+    });
   }
 
   handleSignIn({ userId, feature, timestamp, metadata }: SignInEvent) {
@@ -76,6 +93,32 @@ export class AuditAdapter implements AuditPort {
       userId: String(userId),
       type,
       message: `${type}: ${previous} → ${current}`,
+    });
+  }
+
+  handleSessionManualRevoke({
+    sessionId,
+    userId,
+    timestamp,
+    metadata,
+  }: SessionManualRevokeEvent) {
+    this.log('session_manual_revoke', {
+      sessionId,
+      userId: String(userId),
+      timestamp: new Date(timestamp).toISOString(),
+      metadata,
+    });
+  }
+
+  handleSessionManualRevokeOthers({
+    userId,
+    timestamp,
+    metadata,
+  }: SessionManualRevokeOthersEvent) {
+    this.log('session_manual_revoke_others', {
+      userId: String(userId),
+      timestamp: new Date(timestamp).toISOString(),
+      metadata,
     });
   }
 

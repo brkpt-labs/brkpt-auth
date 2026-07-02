@@ -43,7 +43,9 @@ const mockPort: jest.Mocked<MagicLinkPort> = {
   getToken: jest.fn().mockResolvedValue('test@example.com'),
   deleteToken: jest.fn().mockResolvedValue(undefined),
   mapTargetToProfile: jest.fn().mockReturnValue(mockProfile),
-  findOrCreateUserByProfile: jest.fn().mockResolvedValue(mockUser),
+  findOrCreateUserByProfile: jest
+    .fn()
+    .mockResolvedValue({ user: mockUser, created: false }),
   extractUserIdFromUser: jest.fn().mockReturnValue(1),
 };
 
@@ -218,13 +220,36 @@ describe('MagicLinkService', () => {
       ).rejects.toThrow('[brkpt-auth] mapTargetToProfile returned undefined');
     });
 
-    it('should emit sign-in audit event', async () => {
+    it('should emit sign-in event', async () => {
       await service.authenticate('test@example.com', 'email', mockToken);
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.magic-link.sign-in',
         expect.objectContaining({ feature: 'magic-link', userId: 1 }),
       );
+    });
+
+    it('should emit sign-up event when user is created', async () => {
+      mockPort.findOrCreateUserByProfile.mockResolvedValueOnce({
+        user: mockUser,
+        created: true,
+      });
+
+      await service.authenticate('test@example.com', 'email', mockToken);
+
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        'brkpt-auth.magic-link.sign-up',
+        expect.objectContaining({ feature: 'magic-link', userId: 1 }),
+      );
+    });
+
+    it('should not emit event when authentication fails', async () => {
+      mockPort.getToken.mockResolvedValueOnce(null);
+
+      await expect(
+        service.authenticate('test@example.com', 'email', mockToken),
+      ).rejects.toThrow();
+      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
     });
   });
 

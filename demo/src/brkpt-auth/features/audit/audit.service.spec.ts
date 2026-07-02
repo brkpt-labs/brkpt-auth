@@ -6,8 +6,11 @@ import {
   ChangePasswordEvent,
   ResetPasswordEvent,
   SessionAnomalyEvent,
+  SessionManualRevokeEvent,
+  SessionManualRevokeOthersEvent,
   SignInEvent,
   SignOutEvent,
+  SignUpEvent,
   UserDeleteEvent,
   VerifyEmailEvent,
 } from '../../common/interfaces';
@@ -15,12 +18,15 @@ import { AuditPort, BRKPT_AUTH_AUDIT_PORT } from './audit.port';
 import { AuditService } from './audit.service';
 
 const mockPort: jest.Mocked<AuditPort> = {
+  handleSignUp: jest.fn(),
   handleSignIn: jest.fn(),
   handleSignOut: jest.fn(),
   handleVerifyEmail: jest.fn(),
   handleChangePassword: jest.fn(),
   handleResetPassword: jest.fn(),
   handleSessionAnomaly: jest.fn(),
+  handleSessionManualRevoke: jest.fn(),
+  handleSessionManualRevokeOthers: jest.fn(),
   handleUserDelete: jest.fn(),
 };
 
@@ -39,6 +45,18 @@ describe('AuditService', () => {
   });
 
   afterEach(() => jest.clearAllMocks());
+
+  it('should delegate handleSignUp to port', async () => {
+    const event: SignUpEvent = {
+      userId: 1,
+      feature: 'credentials',
+      timestamp: Date.now(),
+    };
+
+    await service.handleSignUp(event);
+
+    expect(mockPort.handleSignUp).toHaveBeenCalledWith(event);
+  });
 
   it('should delegate handleSignIn to port', async () => {
     const event: SignInEvent = {
@@ -108,6 +126,31 @@ describe('AuditService', () => {
     await service.handleSessionAnomaly(event);
 
     expect(mockPort.handleSessionAnomaly).toHaveBeenCalledWith(event);
+  });
+
+  it('should delegate handleSessionManualRevoke to port', async () => {
+    const event: SessionManualRevokeEvent = {
+      sessionId: 'session-1',
+      userId: 1,
+      timestamp: Date.now(),
+    };
+
+    await service.handleSessionManualRevoke(event);
+
+    expect(mockPort.handleSessionManualRevoke).toHaveBeenCalledWith(event);
+  });
+
+  it('should delegate handleSessionManualRevokeOthers to port', async () => {
+    const event: SessionManualRevokeOthersEvent = {
+      userId: 1,
+      timestamp: Date.now(),
+    };
+
+    await service.handleSessionManualRevokeOthers(event);
+
+    expect(mockPort.handleSessionManualRevokeOthers).toHaveBeenCalledWith(
+      event,
+    );
   });
 
   it('should delegate handleUserDelete to port', async () => {

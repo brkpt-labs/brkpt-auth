@@ -19,7 +19,9 @@ const mockRaw = { email: 'test@example.com', name: 'Test User', sub: '123' };
 
 const mockPort: jest.Mocked<OAuthPort> = {
   mapRawToProfile: jest.fn().mockReturnValue(mockProfile),
-  findOrCreateUserByProfile: jest.fn().mockResolvedValue(mockUser),
+  findOrCreateUserByProfile: jest
+    .fn()
+    .mockResolvedValue({ user: mockUser, created: false }),
   extractUserIdFromUser: jest.fn().mockReturnValue(1),
 };
 
@@ -102,7 +104,7 @@ describe('OAuthService', () => {
       );
     });
 
-    it('should emit sign-in audit event after successful authentication', async () => {
+    it('should emit sign-in event after successful authentication', async () => {
       await service.authenticate({}, 'google');
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
@@ -111,7 +113,21 @@ describe('OAuthService', () => {
       );
     });
 
-    it('should not emit audit event when authentication fails', async () => {
+    it('should emit sign-up event when user is created', async () => {
+      mockPort.findOrCreateUserByProfile.mockResolvedValueOnce({
+        user: mockUser,
+        created: true,
+      });
+
+      await service.authenticate({}, 'google');
+
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        'brkpt-auth.oauth.sign-up',
+        expect.objectContaining({ feature: 'oauth', userId: 1 }),
+      );
+    });
+
+    it('should not emit event when authentication fails', async () => {
       mockPort.mapRawToProfile.mockReturnValueOnce(undefined);
 
       await expect(service.authenticate({}, 'google')).rejects.toThrow();

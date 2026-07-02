@@ -11,6 +11,7 @@ import {
   type BrkptAuthModuleOptions,
   RequestMetadata,
   SignInEvent,
+  SignUpEvent,
   VerificationFeature,
   type VerificationSendEvent,
   type VerificationVerifyEvent,
@@ -83,7 +84,17 @@ export class OtpService {
       );
     }
 
-    const user = await this.port.findOrCreateUserByProfile(profile);
+    const { user, created } =
+      await this.port.findOrCreateUserByProfile(profile);
+
+    if (created) {
+      void this.eventEmitter.emitAsync('brkpt-auth.otp.sign-up', {
+        userId: this.port.extractUserIdFromUser(user),
+        feature: 'otp',
+        timestamp: Date.now(),
+        metadata,
+      } satisfies SignUpEvent);
+    }
 
     void this.eventEmitter.emitAsync('brkpt-auth.otp.sign-in', {
       userId: this.port.extractUserIdFromUser(user),
