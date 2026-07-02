@@ -1,5 +1,4 @@
 {
-  "version": "0.1.0",
   "baseUrl": "https://raw.githubusercontent.com/brkpt-labs/brkpt-auth/main/lib",
   "common": [
     "common/constants/index.ts",
