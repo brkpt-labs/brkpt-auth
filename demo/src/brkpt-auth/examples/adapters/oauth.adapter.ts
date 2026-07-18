@@ -19,7 +19,7 @@ interface GitHubUser {
 }
 
 @Injectable()
-export class OAuthAdapter implements OAuthPort<User> {
+export class OAuthAdapter implements OAuthPort<User, UserProfile> {
   constructor(private readonly userRepo: MemoryUserRepository) {}
 
   mapRawToProfile(provider: string, raw: unknown): UserProfile | undefined {
