@@ -7,7 +7,7 @@ import { OtpPort } from '../../features/otp/otp.port';
 import { UserProfile } from '../types';
 
 @Injectable()
-export class OtpAdapter implements OtpPort<User> {
+export class OtpAdapter implements OtpPort<User, UserProfile> {
   constructor(
     @Inject('REDIS_CLIENT') private readonly redis: RedisClientType,
     private readonly userRepo: MemoryUserRepository,

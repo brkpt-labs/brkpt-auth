@@ -7,7 +7,7 @@ import { MagicLinkPort } from '../../features/magic-link/magic-link.port';
 import { UserProfile } from '../types';
 
 @Injectable()
-export class MagicLinkAdapter implements MagicLinkPort<User> {
+export class MagicLinkAdapter implements MagicLinkPort<User, UserProfile> {
   constructor(
     @Inject('REDIS_CLIENT')
     private readonly redis: RedisClientType,
