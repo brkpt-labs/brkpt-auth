@@ -2,13 +2,13 @@ import { Type } from '@nestjs/common';
 
 import { FeatureConfig, PortProvider } from '../../common/interfaces';
 import { OtpController } from './otp.controller';
+import { OtpDriver, otpDriverMapProvider } from './otp.driver';
 import { BRKPT_AUTH_OTP_PORT, OtpPort } from './otp.port';
 import { OtpService } from './otp.service';
-import { OtpVerifier, otpVerifierMapProvider } from './otp.verifier';
 
 export const otpFeature = (
   adapter: Type<OtpPort>,
-  ...verifiers: Type<OtpVerifier>[]
+  ...drivers: Type<OtpDriver>[]
 ): FeatureConfig => ({
   controllers: [OtpController],
   providers: [
@@ -17,7 +17,7 @@ export const otpFeature = (
       useClass: adapter,
     } satisfies PortProvider<OtpPort>,
     OtpService,
-    ...verifiers,
-    otpVerifierMapProvider(...verifiers),
+    ...drivers,
+    otpDriverMapProvider(...drivers),
   ],
 });

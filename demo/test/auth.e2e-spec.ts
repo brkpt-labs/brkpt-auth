@@ -91,7 +91,7 @@ describe('Auth (e2e)', () => {
         .send({ target: 'verified@example.com', method: 'email' })
         .expect(200);
 
-      const code = ctx.otpVerifier.getLastCode();
+      const code = ctx.otpDriver.getLastCode();
       expect(code).toBeDefined();
 
       const res = await request(ctx.app.getHttpServer())
@@ -126,7 +126,7 @@ describe('Auth (e2e)', () => {
         .send({ target: 'verified@example.com', method: 'email' })
         .expect(200);
 
-      const token = ctx.magicLinkVerifier.getLastToken();
+      const token = ctx.magicLinkDriver.getLastToken();
       expect(token).toBeDefined();
 
       const res = await request(ctx.app.getHttpServer())

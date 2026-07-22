@@ -18,16 +18,16 @@ import {
 } from '../../common/interfaces';
 import { parseDurationToMs } from '../../common/utils';
 import { CoreService } from '../core/core.service';
+import { BRKPT_AUTH_OTP_DRIVER_MAP, OtpDriver } from './otp.driver';
 import { BRKPT_AUTH_OTP_PORT, type OtpPort } from './otp.port';
-import { BRKPT_AUTH_OTP_VERIFIER_MAP, OtpVerifier } from './otp.verifier';
 
 @Injectable()
 export class OtpService {
   constructor(
     @Inject(BRKPT_AUTH_OTP_PORT)
     private readonly port: OtpPort,
-    @Inject(BRKPT_AUTH_OTP_VERIFIER_MAP)
-    private readonly verifiers: Map<string, OtpVerifier>,
+    @Inject(BRKPT_AUTH_OTP_DRIVER_MAP)
+    private readonly drivers: Map<string, OtpDriver>,
     @Inject(BRKPT_AUTH_MODULE_OPTIONS)
     private readonly options: BrkptAuthModuleOptions,
     private readonly coreService: CoreService,
@@ -48,14 +48,14 @@ export class OtpService {
   }
 
   async send(target: string, method: string, feature?: VerificationFeature) {
-    const verifier = this.verifiers.get(method);
-    if (!verifier) {
+    const driver = this.drivers.get(method);
+    if (!driver) {
       throw new BadRequestException(`Unsupported OTP method: ${method}`);
     }
 
     const code = this.generateCode();
 
-    await verifier.send(target, code, feature);
+    await driver.send(target, code, feature);
     await this.port.saveCode(
       target,
       code,

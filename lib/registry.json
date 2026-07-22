@@ -47,18 +47,18 @@
         "features/oauth/oauth.port.ts",
         "features/oauth/oauth.service.ts",
         "features/oauth/oauth.service.spec.ts",
-        "features/oauth/oauth.verifier.ts"
+        "features/oauth/oauth.driver.ts"
       ],
       "dependencies": [],
       "devDependencies": [],
-      "verifiers": {
+      "drivers": {
         "google": {
-          "files": ["features/oauth/verifiers/google.verifier.ts"],
+          "files": ["features/oauth/drivers/google.driver.ts"],
           "dependencies": ["google-auth-library"],
           "devDependencies": []
         },
         "github": {
-          "files": ["features/oauth/verifiers/github.verifier.ts"],
+          "files": ["features/oauth/drivers/github.driver.ts"],
           "dependencies": [],
           "devDependencies": []
         }
@@ -73,13 +73,13 @@
         "features/otp/otp.port.ts",
         "features/otp/otp.service.ts",
         "features/otp/otp.service.spec.ts",
-        "features/otp/otp.verifier.ts"
+        "features/otp/otp.driver.ts"
       ],
       "dependencies": [],
       "devDependencies": [],
-      "verifiers": {
+      "drivers": {
         "email": {
-          "files": ["features/otp/verifiers/email.verifier.ts"],
+          "files": ["features/otp/drivers/email.driver.ts"],
           "dependencies": ["nodemailer"],
           "devDependencies": ["@types/nodemailer"]
         }
@@ -94,13 +94,13 @@
         "features/magic-link/magic-link.port.ts",
         "features/magic-link/magic-link.service.ts",
         "features/magic-link/magic-link.service.spec.ts",
-        "features/magic-link/magic-link.verifier.ts"
+        "features/magic-link/magic-link.driver.ts"
       ],
       "dependencies": [],
       "devDependencies": [],
-      "verifiers": {
+      "drivers": {
         "email": {
-          "files": ["features/magic-link/verifiers/email.verifier.ts"],
+          "files": ["features/magic-link/drivers/email.driver.ts"],
           "dependencies": ["nodemailer"],
           "devDependencies": ["@types/nodemailer"]
         }

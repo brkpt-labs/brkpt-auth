@@ -2,16 +2,16 @@ import { Type } from '@nestjs/common';
 
 import { FeatureConfig, PortProvider } from '../../common/interfaces';
 import { MagicLinkController } from './magic-link.controller';
+import {
+  MagicLinkDriver,
+  magicLinkDriverMapProvider,
+} from './magic-link.driver';
 import { BRKPT_AUTH_MAGIC_LINK_PORT, MagicLinkPort } from './magic-link.port';
 import { MagicLinkService } from './magic-link.service';
-import {
-  MagicLinkVerifier,
-  magicLinkVerifierMapProvider,
-} from './magic-link.verifier';
 
 export const magicLinkFeature = (
   adapter: Type<MagicLinkPort>,
-  ...verifiers: Type<MagicLinkVerifier>[]
+  ...drivers: Type<MagicLinkDriver>[]
 ): FeatureConfig => ({
   controllers: [MagicLinkController],
   providers: [
@@ -20,7 +20,7 @@ export const magicLinkFeature = (
       useClass: adapter,
     } satisfies PortProvider<MagicLinkPort>,
     MagicLinkService,
-    ...verifiers,
-    magicLinkVerifierMapProvider(...verifiers),
+    ...drivers,
+    magicLinkDriverMapProvider(...drivers),
   ],
 });

@@ -20,21 +20,21 @@ import {
 import { parseDurationToMs } from '../../common/utils';
 import { CoreService } from '../core/core.service';
 import {
+  BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP,
+  MagicLinkDriver,
+} from './magic-link.driver';
+import {
   BRKPT_AUTH_MAGIC_LINK_PORT,
   type MagicLinkPort,
 } from './magic-link.port';
-import {
-  BRKPT_AUTH_MAGIC_LINK_VERIFIER_MAP,
-  MagicLinkVerifier,
-} from './magic-link.verifier';
 
 @Injectable()
 export class MagicLinkService {
   constructor(
     @Inject(BRKPT_AUTH_MAGIC_LINK_PORT)
     private readonly port: MagicLinkPort,
-    @Inject(BRKPT_AUTH_MAGIC_LINK_VERIFIER_MAP)
-    private readonly verifiers: Map<string, MagicLinkVerifier>,
+    @Inject(BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP)
+    private readonly drivers: Map<string, MagicLinkDriver>,
     @Inject(BRKPT_AUTH_MODULE_OPTIONS)
     private readonly options: BrkptAuthModuleOptions,
     private readonly coreService: CoreService,
@@ -48,8 +48,8 @@ export class MagicLinkService {
   }
 
   async send(target: string, method: string, feature?: VerificationFeature) {
-    const verifier = this.verifiers.get(method);
-    if (!verifier) {
+    const driver = this.drivers.get(method);
+    if (!driver) {
       throw new BadRequestException(`Unsupported magic link method: ${method}`);
     }
 
@@ -62,7 +62,7 @@ export class MagicLinkService {
     const token = randomUUID();
     const link = `${callbackUrl}?target=${encodeURIComponent(target)}&method=${method}&token=${token}`;
 
-    await verifier.send(target, link, feature);
+    await driver.send(target, link, feature);
     await this.port.saveToken(
       target,
       token,

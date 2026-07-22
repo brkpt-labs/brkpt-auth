@@ -45,7 +45,7 @@ describe('Email Verification (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ target: 'test@example.com', strategy: 'otp' });
 
-    const code = ctx.otpVerifier.getLastCode();
+    const code = ctx.otpDriver.getLastCode();
 
     await request(ctx.app.getHttpServer())
       .post('/auth/verify-email/verify')
@@ -65,7 +65,7 @@ describe('Email Verification (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ target: 'test@example.com', strategy: 'magic-link' });
 
-    const token = ctx.magicLinkVerifier.getLastToken();
+    const token = ctx.magicLinkDriver.getLastToken();
 
     await request(ctx.app.getHttpServer())
       .post('/auth/verify-email/verify')

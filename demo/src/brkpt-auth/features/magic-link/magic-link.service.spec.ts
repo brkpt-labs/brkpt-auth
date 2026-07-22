@@ -8,12 +8,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BRKPT_AUTH_MODULE_OPTIONS } from '../../common/constants';
 import { BrkptAuthModuleOptions } from '../../common/interfaces';
 import { CoreService } from '../core/core.service';
+import {
+  BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP,
+  MagicLinkDriver,
+} from './magic-link.driver';
 import { BRKPT_AUTH_MAGIC_LINK_PORT, MagicLinkPort } from './magic-link.port';
 import { MagicLinkService } from './magic-link.service';
-import {
-  BRKPT_AUTH_MAGIC_LINK_VERIFIER_MAP,
-  MagicLinkVerifier,
-} from './magic-link.verifier';
 
 const mockOptions: BrkptAuthModuleOptions = {
   jwt: {
@@ -49,13 +49,13 @@ const mockPort: jest.Mocked<MagicLinkPort> = {
   extractUserIdFromUser: jest.fn().mockReturnValue(1),
 };
 
-const mockEmailVerifier: jest.Mocked<MagicLinkVerifier> = {
+const mockEmailDriver: jest.Mocked<MagicLinkDriver> = {
   method: 'email',
   send: jest.fn().mockResolvedValue(undefined),
 };
 
-const mockVerifiers = new Map<string, MagicLinkVerifier>([
-  ['email', mockEmailVerifier],
+const mockDrivers = new Map<string, MagicLinkDriver>([
+  ['email', mockEmailDriver],
 ]);
 
 const mockCoreService = {
@@ -79,8 +79,8 @@ describe('MagicLinkService', () => {
         MagicLinkService,
         { provide: BRKPT_AUTH_MAGIC_LINK_PORT, useValue: mockPort },
         {
-          provide: BRKPT_AUTH_MAGIC_LINK_VERIFIER_MAP,
-          useValue: mockVerifiers,
+          provide: BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP,
+          useValue: mockDrivers,
         },
         { provide: BRKPT_AUTH_MODULE_OPTIONS, useValue: mockOptions },
         { provide: CoreService, useValue: mockCoreService },
@@ -105,8 +105,8 @@ describe('MagicLinkService', () => {
             MagicLinkService,
             { provide: BRKPT_AUTH_MAGIC_LINK_PORT, useValue: mockPort },
             {
-              provide: BRKPT_AUTH_MAGIC_LINK_VERIFIER_MAP,
-              useValue: mockVerifiers,
+              provide: BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP,
+              useValue: mockDrivers,
             },
             {
               provide: BRKPT_AUTH_MODULE_OPTIONS,
@@ -123,10 +123,10 @@ describe('MagicLinkService', () => {
   });
 
   describe('send', () => {
-    it('should send magic link via verifier and save token', async () => {
+    it('should send magic link via driver and save token', async () => {
       await service.send('test@example.com', 'email');
 
-      expect(mockEmailVerifier.send).toHaveBeenCalledWith(
+      expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.stringContaining(mockToken),
         undefined,
@@ -141,7 +141,7 @@ describe('MagicLinkService', () => {
     it('should use authenticate callback url when no feature provided', async () => {
       await service.send('test@example.com', 'email');
 
-      expect(mockEmailVerifier.send).toHaveBeenCalledWith(
+      expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.stringContaining('localhost:3000/auth/magic-link/authenticate'),
         undefined,
@@ -151,7 +151,7 @@ describe('MagicLinkService', () => {
     it('should use feature-specific callback url when feature provided', async () => {
       await service.send('test@example.com', 'email', 'verifyEmail');
 
-      expect(mockEmailVerifier.send).toHaveBeenCalledWith(
+      expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.stringContaining('localhost:3000/auth/verify-email/verify'),
         'verifyEmail',
@@ -166,7 +166,7 @@ describe('MagicLinkService', () => {
 
     it('should send before saving token', async () => {
       const callOrder: string[] = [];
-      mockEmailVerifier.send.mockImplementationOnce(async () => {
+      mockEmailDriver.send.mockImplementationOnce(async () => {
         callOrder.push('send');
       });
       mockPort.saveToken.mockImplementationOnce(async () => {
@@ -262,7 +262,7 @@ describe('MagicLinkService', () => {
         feature: 'verifyEmail',
       });
 
-      expect(mockEmailVerifier.send).toHaveBeenCalled();
+      expect(mockEmailDriver.send).toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
@@ -274,7 +274,7 @@ describe('MagicLinkService', () => {
         feature: 'verifyEmail',
       });
 
-      expect(mockEmailVerifier.send).not.toHaveBeenCalled();
+      expect(mockEmailDriver.send).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
   });

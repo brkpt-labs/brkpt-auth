@@ -77,7 +77,7 @@ describe('Password (e2e)', () => {
         })
         .expect(200);
 
-      const code = ctx.otpVerifier.getLastCode();
+      const code = ctx.otpDriver.getLastCode();
 
       await request(ctx.app.getHttpServer())
         .post('/auth/reset-password/reset')
@@ -106,7 +106,7 @@ describe('Password (e2e)', () => {
         })
         .expect(200);
 
-      const token = ctx.magicLinkVerifier.getLastToken();
+      const token = ctx.magicLinkDriver.getLastToken();
 
       await request(ctx.app.getHttpServer())
         .post('/auth/reset-password/reset')

@@ -8,9 +8,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BRKPT_AUTH_MODULE_OPTIONS } from '../../common/constants';
 import { BrkptAuthModuleOptions } from '../../common/interfaces';
 import { CoreService } from '../core/core.service';
+import { BRKPT_AUTH_OTP_DRIVER_MAP, OtpDriver } from './otp.driver';
 import { BRKPT_AUTH_OTP_PORT, OtpPort } from './otp.port';
 import { OtpService } from './otp.service';
-import { BRKPT_AUTH_OTP_VERIFIER_MAP, OtpVerifier } from './otp.verifier';
 
 const mockOptions: BrkptAuthModuleOptions = {
   jwt: {
@@ -41,14 +41,12 @@ const mockPort: jest.Mocked<OtpPort> = {
   extractUserIdFromUser: jest.fn().mockReturnValue(1),
 };
 
-const mockEmailVerifier: jest.Mocked<OtpVerifier> = {
+const mockEmailDriver: jest.Mocked<OtpDriver> = {
   method: 'email',
   send: jest.fn().mockResolvedValue(undefined),
 };
 
-const mockVerifiers = new Map<string, OtpVerifier>([
-  ['email', mockEmailVerifier],
-]);
+const mockDrivers = new Map<string, OtpDriver>([['email', mockEmailDriver]]);
 
 const mockCoreService = {
   generateTokens: jest.fn().mockResolvedValue(mockTokens),
@@ -66,7 +64,7 @@ describe('OtpService', () => {
       providers: [
         OtpService,
         { provide: BRKPT_AUTH_OTP_PORT, useValue: mockPort },
-        { provide: BRKPT_AUTH_OTP_VERIFIER_MAP, useValue: mockVerifiers },
+        { provide: BRKPT_AUTH_OTP_DRIVER_MAP, useValue: mockDrivers },
         { provide: BRKPT_AUTH_MODULE_OPTIONS, useValue: mockOptions },
         { provide: CoreService, useValue: mockCoreService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
@@ -89,7 +87,7 @@ describe('OtpService', () => {
           providers: [
             OtpService,
             { provide: BRKPT_AUTH_OTP_PORT, useValue: mockPort },
-            { provide: BRKPT_AUTH_OTP_VERIFIER_MAP, useValue: mockVerifiers },
+            { provide: BRKPT_AUTH_OTP_DRIVER_MAP, useValue: mockDrivers },
             { provide: BRKPT_AUTH_MODULE_OPTIONS, useValue: optionsWithoutOtp },
             { provide: CoreService, useValue: mockCoreService },
             { provide: EventEmitter2, useValue: mockEventEmitter },
@@ -102,10 +100,10 @@ describe('OtpService', () => {
   });
 
   describe('send', () => {
-    it('should generate code, send via verifier and save to port', async () => {
+    it('should generate code, send via driver and save to port', async () => {
       await service.send('test@example.com', 'email');
 
-      expect(mockEmailVerifier.send).toHaveBeenCalledWith(
+      expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.any(String),
         undefined,
@@ -117,10 +115,10 @@ describe('OtpService', () => {
       );
     });
 
-    it('should pass feature to verifier when provided', async () => {
+    it('should pass feature to driver when provided', async () => {
       await service.send('test@example.com', 'email', 'verifyEmail');
 
-      expect(mockEmailVerifier.send).toHaveBeenCalledWith(
+      expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.any(String),
         'verifyEmail',
@@ -135,7 +133,7 @@ describe('OtpService', () => {
 
     it('should send before saving code', async () => {
       const callOrder: string[] = [];
-      mockEmailVerifier.send.mockImplementationOnce(async () => {
+      mockEmailDriver.send.mockImplementationOnce(async () => {
         callOrder.push('send');
       });
       mockPort.saveCode.mockImplementationOnce(async () => {
@@ -229,7 +227,7 @@ describe('OtpService', () => {
         feature: 'verifyEmail',
       });
 
-      expect(mockEmailVerifier.send).toHaveBeenCalled();
+      expect(mockEmailDriver.send).toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
@@ -241,7 +239,7 @@ describe('OtpService', () => {
         feature: 'verifyEmail',
       });
 
-      expect(mockEmailVerifier.send).not.toHaveBeenCalled();
+      expect(mockEmailDriver.send).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
   });

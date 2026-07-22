@@ -5,9 +5,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { CoreService } from '../core/core.service';
+import { BRKPT_AUTH_OAUTH_DRIVER_MAP, OAuthDriver } from './oauth.driver';
 import { BRKPT_AUTH_OAUTH_PORT, OAuthPort } from './oauth.port';
 import { OAuthService } from './oauth.service';
-import { BRKPT_AUTH_OAUTH_VERIFIER_MAP, OAuthVerifier } from './oauth.verifier';
 
 const mockUser = { id: 1, email: 'test@example.com' };
 const mockTokens = {
@@ -25,19 +25,19 @@ const mockPort: jest.Mocked<OAuthPort> = {
   extractUserIdFromUser: jest.fn().mockReturnValue(1),
 };
 
-const mockGoogleVerifier: jest.Mocked<OAuthVerifier> = {
+const mockGoogleDriver: jest.Mocked<OAuthDriver> = {
   provider: 'google',
   verify: jest.fn().mockResolvedValue(mockRaw),
 };
 
-const mockGithubVerifier: jest.Mocked<OAuthVerifier> = {
+const mockGithubDriver: jest.Mocked<OAuthDriver> = {
   provider: 'github',
   verify: jest.fn().mockResolvedValue(mockRaw),
 };
 
-const mockVerifiers = new Map<string, OAuthVerifier>([
-  ['google', mockGoogleVerifier],
-  ['github', mockGithubVerifier],
+const mockDrivers = new Map<string, OAuthDriver>([
+  ['google', mockGoogleDriver],
+  ['github', mockGithubDriver],
 ]);
 
 const mockCoreService = {
@@ -56,7 +56,7 @@ describe('OAuthService', () => {
       providers: [
         OAuthService,
         { provide: BRKPT_AUTH_OAUTH_PORT, useValue: mockPort },
-        { provide: BRKPT_AUTH_OAUTH_VERIFIER_MAP, useValue: mockVerifiers },
+        { provide: BRKPT_AUTH_OAUTH_DRIVER_MAP, useValue: mockDrivers },
         { provide: CoreService, useValue: mockCoreService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
@@ -71,7 +71,7 @@ describe('OAuthService', () => {
     it('should authenticate with google and return tokens', async () => {
       const result = await service.authenticate({}, 'google');
 
-      expect(mockGoogleVerifier.verify).toHaveBeenCalledWith({});
+      expect(mockGoogleDriver.verify).toHaveBeenCalledWith({});
       expect(mockPort.mapRawToProfile).toHaveBeenCalledWith('google', mockRaw);
       expect(mockPort.findOrCreateUserByProfile).toHaveBeenCalledWith(
         mockProfile,
@@ -86,7 +86,7 @@ describe('OAuthService', () => {
     it('should authenticate with github and return tokens', async () => {
       const result = await service.authenticate({}, 'github');
 
-      expect(mockGithubVerifier.verify).toHaveBeenCalledWith({});
+      expect(mockGithubDriver.verify).toHaveBeenCalledWith({});
       expect(result).toEqual(mockTokens);
     });
 

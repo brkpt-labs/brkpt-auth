@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
 import { VerificationFeature } from '../../src/brkpt-auth/common/interfaces';
-import { MagicLinkVerifier } from '../../src/brkpt-auth/features/magic-link/magic-link.verifier';
-import { OtpVerifier } from '../../src/brkpt-auth/features/otp/otp.verifier';
+import { MagicLinkDriver } from '../../src/brkpt-auth/features/magic-link/magic-link.driver';
+import { OtpDriver } from '../../src/brkpt-auth/features/otp/otp.driver';
 
 @Injectable()
-export class MockEmailOtpVerifier implements OtpVerifier {
+export class MockEmailOtpDriver implements OtpDriver {
   readonly method = 'email';
   private lastCode: string | null = null;
   private lastTarget: string | null = null;
@@ -35,7 +35,7 @@ export class MockEmailOtpVerifier implements OtpVerifier {
 }
 
 @Injectable()
-export class MockEmailMagicLinkVerifier implements MagicLinkVerifier {
+export class MockEmailMagicLinkDriver implements MagicLinkDriver {
   readonly method = 'email';
   private lastLink: string | null = null;
 

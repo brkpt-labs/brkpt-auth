@@ -7,16 +7,16 @@ import {
   SignUpEvent,
 } from '../../common/interfaces';
 import { CoreService } from '../core/core.service';
+import { BRKPT_AUTH_OAUTH_DRIVER_MAP, OAuthDriver } from './oauth.driver';
 import { BRKPT_AUTH_OAUTH_PORT, type OAuthPort } from './oauth.port';
-import { BRKPT_AUTH_OAUTH_VERIFIER_MAP, OAuthVerifier } from './oauth.verifier';
 
 @Injectable()
 export class OAuthService {
   constructor(
     @Inject(BRKPT_AUTH_OAUTH_PORT)
     private readonly port: OAuthPort,
-    @Inject(BRKPT_AUTH_OAUTH_VERIFIER_MAP)
-    private readonly verifiers: Map<string, OAuthVerifier>,
+    @Inject(BRKPT_AUTH_OAUTH_DRIVER_MAP)
+    private readonly drivers: Map<string, OAuthDriver>,
     private readonly coreService: CoreService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -26,12 +26,12 @@ export class OAuthService {
     provider: string,
     metadata?: RequestMetadata,
   ) {
-    const verifier = this.verifiers.get(provider);
-    if (!verifier) {
+    const driver = this.drivers.get(provider);
+    if (!driver) {
       throw new BadRequestException(`Unsupported OAuth provider: ${provider}`);
     }
 
-    const raw = await verifier.verify(dto);
+    const raw = await driver.verify(dto);
     const profile = this.port.mapRawToProfile(provider, raw);
     if (!profile) {
       throw new Error(

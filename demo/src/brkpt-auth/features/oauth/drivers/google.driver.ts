@@ -3,10 +3,10 @@ import { OAuth2Client } from 'google-auth-library';
 
 import { BRKPT_AUTH_MODULE_OPTIONS } from '../../../common/constants';
 import { type BrkptAuthModuleOptions } from '../../../common/interfaces';
-import { OAuthVerifier } from '../oauth.verifier';
+import { OAuthDriver } from '../oauth.driver';
 
 @Injectable()
-export class GoogleOAuthVerifier implements OAuthVerifier {
+export class GoogleOAuthDriver implements OAuthDriver {
   readonly provider = 'google';
   private readonly client: OAuth2Client;
 
@@ -17,7 +17,7 @@ export class GoogleOAuthVerifier implements OAuthVerifier {
     const cfg = options.oauth?.google;
     if (!cfg) {
       throw new Error(
-        '[brkpt-auth] GoogleOAuthVerifier requires options.oauth.google to be configured.',
+        '[brkpt-auth] GoogleOAuthDriver requires options.oauth.google to be configured.',
       );
     }
     this.client = new OAuth2Client(cfg.clientId, cfg.clientSecret);

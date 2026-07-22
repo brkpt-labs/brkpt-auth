@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { BRKPT_AUTH_MODULE_OPTIONS } from '../../../common/constants';
 import { type BrkptAuthModuleOptions } from '../../../common/interfaces';
-import { OAuthVerifier } from '../oauth.verifier';
+import { OAuthDriver } from '../oauth.driver';
 
 interface GithubTokenResponse {
   access_token: string;
@@ -11,7 +11,7 @@ interface GithubTokenResponse {
 }
 
 @Injectable()
-export class GithubOAuthVerifier implements OAuthVerifier {
+export class GithubOAuthDriver implements OAuthDriver {
   readonly provider = 'github';
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -23,7 +23,7 @@ export class GithubOAuthVerifier implements OAuthVerifier {
     const cfg = options.oauth?.github;
     if (!cfg) {
       throw new Error(
-        '[brkpt-auth] GithubOAuthVerifier requires options.oauth.github to be configured.',
+        '[brkpt-auth] GithubOAuthDriver requires options.oauth.github to be configured.',
       );
     }
     this.clientId = cfg.clientId;

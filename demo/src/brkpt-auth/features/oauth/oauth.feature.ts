@@ -2,13 +2,13 @@ import { Type } from '@nestjs/common';
 
 import { FeatureConfig, PortProvider } from '../../common/interfaces';
 import { OAuthController } from './oauth.controller';
+import { OAuthDriver, oauthDriverMapProvider } from './oauth.driver';
 import { BRKPT_AUTH_OAUTH_PORT, OAuthPort } from './oauth.port';
 import { OAuthService } from './oauth.service';
-import { OAuthVerifier, oauthVerifierMapProvider } from './oauth.verifier';
 
 export const oauthFeature = (
   adapter: Type<OAuthPort>,
-  ...verifiers: Type<OAuthVerifier>[]
+  ...drivers: Type<OAuthDriver>[]
 ): FeatureConfig => ({
   controllers: [OAuthController],
   providers: [
@@ -17,7 +17,7 @@ export const oauthFeature = (
       useClass: adapter,
     } satisfies PortProvider<OAuthPort>,
     OAuthService,
-    ...verifiers,
-    oauthVerifierMapProvider(...verifiers),
+    ...drivers,
+    oauthDriverMapProvider(...drivers),
   ],
 });

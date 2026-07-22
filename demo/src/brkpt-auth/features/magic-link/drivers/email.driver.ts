@@ -9,10 +9,10 @@ import {
   type BrkptAuthModuleOptions,
   VerificationFeature,
 } from '../../../common/interfaces';
-import { OtpVerifier } from '../otp.verifier';
+import { MagicLinkDriver } from '../magic-link.driver';
 
 @Injectable()
-export class EmailOtpVerifier implements OtpVerifier {
+export class EmailMagicLinkDriver implements MagicLinkDriver {
   readonly method = 'email';
   private readonly transporter: Transporter;
   private readonly from: string;
@@ -21,10 +21,10 @@ export class EmailOtpVerifier implements OtpVerifier {
     @Inject(BRKPT_AUTH_MODULE_OPTIONS)
     options: BrkptAuthModuleOptions,
   ) {
-    const cfg = options.otp?.emailClient;
+    const cfg = options.magicLink?.emailClient;
     if (!cfg) {
       throw new Error(
-        '[brkpt-auth] EmailOtpVerifier requires options.otp.emailClient to be configured.',
+        '[brkpt-auth] EmailMagicLinkDriver requires options.magicLink.emailClient to be configured.',
       );
     }
     this.from = cfg.from;
@@ -40,18 +40,19 @@ export class EmailOtpVerifier implements OtpVerifier {
 
   async send(
     target: string,
-    code: string,
+    link: string,
     feature?: VerificationFeature,
   ): Promise<void> {
     const subject = feature
       ? VERIFICATION_FEATURE_SUBJECTS[feature]
-      : 'Your OTP code';
+      : 'Your magic link';
 
     await this.transporter.sendMail({
       from: this.from,
       to: target,
       subject,
-      text: `Your OTP code is: ${code}`,
+      text: `Click the link to continue: ${link}`,
+      html: `<a href="${link}">Click here to continue</a>`,
     });
   }
 }
