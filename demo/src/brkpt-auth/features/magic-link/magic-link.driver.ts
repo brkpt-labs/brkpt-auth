@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 
-import { VerificationFeature } from '../../common/interfaces';
+import { VerificationPurpose } from '../../common/interfaces';
 
 export const BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP = Symbol(
   'BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP',
@@ -11,7 +11,7 @@ export interface MagicLinkDriver {
   send(
     target: string,
     link: string,
-    feature?: VerificationFeature,
+    purpose: VerificationPurpose,
   ): Promise<void>;
 }
 

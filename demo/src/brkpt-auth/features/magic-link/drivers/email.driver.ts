@@ -3,11 +3,11 @@ import { createTransport, Transporter } from 'nodemailer';
 
 import {
   BRKPT_AUTH_MODULE_OPTIONS,
-  VERIFICATION_FEATURE_SUBJECTS,
+  VERIFICATION_PURPOSE_LABELS,
 } from '../../../common/constants';
 import {
   type BrkptAuthModuleOptions,
-  VerificationFeature,
+  VerificationPurpose,
 } from '../../../common/interfaces';
 import { MagicLinkDriver } from '../magic-link.driver';
 
@@ -41,11 +41,9 @@ export class EmailMagicLinkDriver implements MagicLinkDriver {
   async send(
     target: string,
     link: string,
-    feature?: VerificationFeature,
+    purpose: VerificationPurpose,
   ): Promise<void> {
-    const subject = feature
-      ? VERIFICATION_FEATURE_SUBJECTS[feature]
-      : 'Your magic link';
+    const subject = `Your magic link to ${VERIFICATION_PURPOSE_LABELS[purpose]}`;
 
     await this.transporter.sendMail({
       from: this.from,

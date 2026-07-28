@@ -49,7 +49,7 @@ describe('VerifyEmailService', () => {
           target: 'test@example.com',
           strategy: 'otp',
           method: 'email',
-          feature: 'verifyEmail',
+          purpose: 'verifyEmail',
         },
       );
     });
@@ -86,6 +86,8 @@ describe('VerifyEmailService', () => {
         {
           target: 'test@example.com',
           strategy: 'otp',
+          method: 'email',
+          purpose: 'verifyEmail',
           proof: '123456',
         },
       );

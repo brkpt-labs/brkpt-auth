@@ -3,6 +3,7 @@ import { type RedisClientType } from 'redis';
 
 import { MemoryUserRepository } from '../../../user/repositories/memory-user.repository';
 import { User } from '../../../user/user.entity';
+import { MagicLinkTokenData } from '../../common/interfaces';
 import { MagicLinkPort } from '../../features/magic-link/magic-link.port';
 import { UserProfile } from '../types';
 
@@ -18,14 +19,19 @@ export class MagicLinkAdapter implements MagicLinkPort<User, UserProfile> {
     return `magic-link:${token}`;
   }
 
-  async saveToken(target: string, token: string, ttlMs: number): Promise<void> {
-    await this.redis.set(this.key(token), target, {
+  async saveToken(
+    token: string,
+    data: MagicLinkTokenData,
+    ttlMs: number,
+  ): Promise<void> {
+    await this.redis.set(this.key(token), JSON.stringify(data), {
       expiration: { type: 'PX', value: ttlMs },
     });
   }
 
-  getToken(token: string): Promise<string | null> {
-    return this.redis.get(this.key(token));
+  async getTokenData(token: string): Promise<MagicLinkTokenData | null> {
+    const data = await this.redis.get(this.key(token));
+    return data ? (JSON.parse(data) as MagicLinkTokenData) : null;
   }
 
   async deleteToken(token: string): Promise<void> {

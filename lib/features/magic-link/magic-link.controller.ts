@@ -41,15 +41,13 @@ export class MagicLinkController {
   @Get('authenticate')
   async authenticate(
     @Query()
-    { target, method, token }: AuthenticateDto,
+    { token }: AuthenticateDto,
     @Req() req: BrkptAuthRequest,
     @Res({ passthrough: true })
     response: Response,
   ) {
     const { accessToken, refreshToken } =
       await this.magicLinkService.authenticate(
-        target,
-        method,
         token,
         extractRequestMetadata(req),
       );

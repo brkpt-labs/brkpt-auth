@@ -36,9 +36,7 @@ export interface BrkptAuthModuleOptions {
   };
   magicLink?: {
     expiresIn: ExpiresIn;
-    callbackUrls: {
-      authenticate: string;
-    } & Partial<Record<VerificationFeature, string>>;
+    callbackUrls: Record<VerificationPurpose, string>;
     emailClient?: EmailClient;
   };
 }
@@ -131,19 +129,37 @@ export interface SessionManualRevokeOthersEvent {
 }
 
 // Verification
-export type VerificationFeature = 'verifyEmail' | 'resetPassword';
+export type VerificationPurpose =
+  | 'authenticate'
+  | 'verifyEmail'
+  | 'resetPassword';
 
 export interface VerificationSendEvent {
   target: string;
   strategy: string;
   method: string;
-  feature: VerificationFeature;
+  purpose: VerificationPurpose;
 }
 
 export interface VerificationVerifyEvent {
   target: string;
   strategy: string;
+  method: string;
+  purpose: VerificationPurpose;
   proof: string;
+}
+
+// Verification Data
+export interface OtpCodeData {
+  code: string;
+  method: string;
+  purpose: VerificationPurpose;
+}
+
+export interface MagicLinkTokenData {
+  target: string;
+  method: string;
+  purpose: VerificationPurpose;
 }
 
 // User

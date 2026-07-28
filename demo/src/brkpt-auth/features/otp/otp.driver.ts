@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 
-import { VerificationFeature } from '../../common/interfaces';
+import { VerificationPurpose } from '../../common/interfaces';
 
 export const BRKPT_AUTH_OTP_DRIVER_MAP = Symbol('BRKPT_AUTH_OTP_DRIVER_MAP');
 
@@ -9,7 +9,7 @@ export interface OtpDriver {
   send(
     target: string,
     code: string,
-    feature?: VerificationFeature,
+    purpose: VerificationPurpose,
   ): Promise<void>;
 }
 

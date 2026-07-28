@@ -27,7 +27,7 @@ export class VerifyEmailService {
         target,
         strategy,
         method: 'email',
-        feature: 'verifyEmail',
+        purpose: 'verifyEmail',
       } satisfies VerificationSendEvent,
     );
     if (!results.some((r) => r === true)) {
@@ -49,6 +49,8 @@ export class VerifyEmailService {
       {
         target,
         strategy,
+        method: 'email',
+        purpose: 'verifyEmail',
         proof,
       } satisfies VerificationVerifyEvent,
     );

@@ -13,7 +13,7 @@ import {
   RequestMetadata,
   SignInEvent,
   SignUpEvent,
-  VerificationFeature,
+  VerificationPurpose,
   type VerificationSendEvent,
   type VerificationVerifyEvent,
 } from '../../common/interfaces';
@@ -47,47 +47,42 @@ export class MagicLinkService {
     }
   }
 
-  async send(target: string, method: string, feature?: VerificationFeature) {
+  async send(
+    target: string,
+    method: string,
+    purpose: VerificationPurpose = 'authenticate',
+  ) {
     const driver = this.drivers.get(method);
     if (!driver) {
       throw new BadRequestException(`Unsupported magic link method: ${method}`);
     }
 
-    const callbackUrls = this.options.magicLink!.callbackUrls;
-    const callbackUrl =
-      (feature &&
-        (callbackUrls as Record<string, string | undefined>)[feature]) ??
-      callbackUrls.authenticate;
+    const callbackUrl = this.options.magicLink!.callbackUrls[purpose];
 
     const token = randomUUID();
-    const link = `${callbackUrl}?target=${encodeURIComponent(target)}&method=${method}&token=${token}`;
+    const link = `${callbackUrl}?token=${encodeURIComponent(token)}`;
 
-    await driver.send(target, link, feature);
+    await driver.send(target, link, purpose);
     await this.port.saveToken(
-      target,
       token,
+      { target, method, purpose },
       parseDurationToMs(this.options.magicLink!.expiresIn),
     );
   }
 
-  async authenticate(
-    target: string,
-    method: string,
-    token: string,
-    metadata?: RequestMetadata,
-  ) {
-    const savedTarget = await this.port.getToken(token);
-    if (!savedTarget || savedTarget !== target) {
+  async authenticate(token: string, metadata?: RequestMetadata) {
+    const data = await this.port.getTokenData(token);
+    if (!data || data.purpose !== 'authenticate') {
       throw new UnauthorizedException('Invalid or expired magic link');
     }
 
     await this.port.deleteToken(token);
 
-    const profile = this.port.mapTargetToProfile(method, target);
+    const profile = this.port.mapTargetToProfile(data.method, data.target);
     if (!profile) {
       throw new Error(
         '[brkpt-auth] mapTargetToProfile returned undefined for method: ' +
-          method,
+          data.method,
       );
     }
 
@@ -120,12 +115,12 @@ export class MagicLinkService {
     target,
     strategy,
     method,
-    feature,
+    purpose,
   }: VerificationSendEvent) {
     if (strategy !== 'magic-link') {
       return;
     }
-    await this.send(target, method, feature);
+    await this.send(target, method, purpose);
     return true;
   }
 
@@ -133,14 +128,21 @@ export class MagicLinkService {
   async handleVerificationVerify({
     target,
     strategy,
+    method,
+    purpose,
     proof,
   }: VerificationVerifyEvent) {
     if (strategy !== 'magic-link') {
       return;
     }
 
-    const savedTarget = await this.port.getToken(proof);
-    if (!savedTarget || savedTarget !== target) {
+    const data = await this.port.getTokenData(proof);
+    if (
+      !data ||
+      data.target !== target ||
+      data.method !== method ||
+      data.purpose !== purpose
+    ) {
       throw new UnauthorizedException('Invalid or expired magic link');
     }
 

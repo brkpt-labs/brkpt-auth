@@ -39,13 +39,12 @@ export class OtpController {
   @Post('authenticate')
   async authenticate(
     @Body()
-    { target, method, code }: AuthenticateDto,
+    { target, code }: AuthenticateDto,
     @Req() req: BrkptAuthRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const { accessToken, refreshToken } = await this.otpService.authenticate(
       target,
-      method,
       code,
       extractRequestMetadata(req),
     );

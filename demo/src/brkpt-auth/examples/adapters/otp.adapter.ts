@@ -3,6 +3,7 @@ import { type RedisClientType } from 'redis';
 
 import { MemoryUserRepository } from '../../../user/repositories/memory-user.repository';
 import { User } from '../../../user/user.entity';
+import { OtpCodeData } from '../../common/interfaces';
 import { OtpPort } from '../../features/otp/otp.port';
 import { UserProfile } from '../types';
 
@@ -17,14 +18,19 @@ export class OtpAdapter implements OtpPort<User, UserProfile> {
     return `otp:${target}`;
   }
 
-  async saveCode(target: string, code: string, ttlMs: number): Promise<void> {
-    await this.redis.set(this.key(target), code, {
+  async saveCode(
+    target: string,
+    data: OtpCodeData,
+    ttlMs: number,
+  ): Promise<void> {
+    await this.redis.set(this.key(target), JSON.stringify(data), {
       expiration: { type: 'PX', value: ttlMs },
     });
   }
 
-  getCode(target: string): Promise<string | null> {
-    return this.redis.get(this.key(target));
+  async getCodeData(target: string): Promise<OtpCodeData | null> {
+    const data = await this.redis.get(this.key(target));
+    return data ? (JSON.parse(data) as OtpCodeData) : null;
   }
 
   async deleteCode(target: string): Promise<void> {

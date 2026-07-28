@@ -43,14 +43,22 @@ describe('Email Verification (e2e)', () => {
     await request(ctx.app.getHttpServer())
       .post('/auth/verify-email/send')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ target: 'test@example.com', strategy: 'otp' });
+      .send({ target: 'test@example.com', strategy: 'otp' })
+      .expect(200);
 
     const code = ctx.otpDriver.getLastCode();
+
+    expect(code).toBeTruthy();
+    expect(ctx.otpDriver.getLastPurpose()).toBe('verifyEmail');
 
     await request(ctx.app.getHttpServer())
       .post('/auth/verify-email/verify')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ target: 'test@example.com', strategy: 'otp', proof: code })
+      .send({
+        target: 'test@example.com',
+        strategy: 'otp',
+        proof: code,
+      })
       .expect(200);
 
     await request(ctx.app.getHttpServer())
@@ -63,9 +71,13 @@ describe('Email Verification (e2e)', () => {
     await request(ctx.app.getHttpServer())
       .post('/auth/verify-email/send')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ target: 'test@example.com', strategy: 'magic-link' });
+      .send({ target: 'test@example.com', strategy: 'magic-link' })
+      .expect(200);
 
     const token = ctx.magicLinkDriver.getLastToken();
+
+    expect(token).toBeTruthy();
+    expect(ctx.magicLinkDriver.getLastPurpose()).toBe('verifyEmail');
 
     await request(ctx.app.getHttpServer())
       .post('/auth/verify-email/verify')

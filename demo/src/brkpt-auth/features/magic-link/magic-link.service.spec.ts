@@ -6,7 +6,10 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { BRKPT_AUTH_MODULE_OPTIONS } from '../../common/constants';
-import { BrkptAuthModuleOptions } from '../../common/interfaces';
+import {
+  BrkptAuthModuleOptions,
+  MagicLinkTokenData,
+} from '../../common/interfaces';
 import { CoreService } from '../core/core.service';
 import {
   BRKPT_AUTH_MAGIC_LINK_DRIVER_MAP,
@@ -38,9 +41,15 @@ const mockTokens = {
 const mockProfile = { email: 'test@example.com' };
 const mockToken = 'mock-uuid-token';
 
+const mockAuthenticateTokenData: MagicLinkTokenData = {
+  target: 'test@example.com',
+  method: 'email',
+  purpose: 'authenticate',
+};
+
 const mockPort: jest.Mocked<MagicLinkPort> = {
   saveToken: jest.fn().mockResolvedValue(undefined),
-  getToken: jest.fn().mockResolvedValue('test@example.com'),
+  getTokenData: jest.fn().mockResolvedValue(mockAuthenticateTokenData),
   deleteToken: jest.fn().mockResolvedValue(undefined),
   mapTargetToProfile: jest.fn().mockReturnValue(mockProfile),
   findOrCreateUserByProfile: jest
@@ -123,32 +132,37 @@ describe('MagicLinkService', () => {
   });
 
   describe('send', () => {
-    it('should send magic link via driver and save token', async () => {
+    it('should send magic link via driver and save token data', async () => {
       await service.send('test@example.com', 'email');
 
       expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.stringContaining(mockToken),
-        undefined,
+        'authenticate',
       );
+
       expect(mockPort.saveToken).toHaveBeenCalledWith(
-        'test@example.com',
         mockToken,
+        {
+          target: 'test@example.com',
+          method: 'email',
+          purpose: 'authenticate',
+        },
         5 * 60 * 1000,
       );
     });
 
-    it('should use authenticate callback url when no feature provided', async () => {
+    it('should use authenticate callback url by default', async () => {
       await service.send('test@example.com', 'email');
 
       expect(mockEmailDriver.send).toHaveBeenCalledWith(
         'test@example.com',
         expect.stringContaining('localhost:3000/auth/magic-link/authenticate'),
-        undefined,
+        'authenticate',
       );
     });
 
-    it('should use feature-specific callback url when feature provided', async () => {
+    it('should use purpose-specific callback url when purpose provided', async () => {
       await service.send('test@example.com', 'email', 'verifyEmail');
 
       expect(mockEmailDriver.send).toHaveBeenCalledWith(
@@ -156,19 +170,44 @@ describe('MagicLinkService', () => {
         expect.stringContaining('localhost:3000/auth/verify-email/verify'),
         'verifyEmail',
       );
+
+      expect(mockPort.saveToken).toHaveBeenCalledWith(
+        mockToken,
+        {
+          target: 'test@example.com',
+          method: 'email',
+          purpose: 'verifyEmail',
+        },
+        5 * 60 * 1000,
+      );
+    });
+
+    it('should include only token in generated magic link query', async () => {
+      await service.send('test@example.com', 'email');
+
+      const link = mockEmailDriver.send.mock.calls[0]![1];
+
+      expect(link).toContain(`token=${mockToken}`);
+      expect(link).not.toContain('target=');
+      expect(link).not.toContain('method=');
     });
 
     it('should throw BadRequestException for unsupported method', async () => {
       await expect(service.send('test@example.com', 'sms')).rejects.toThrow(
         BadRequestException,
       );
+
+      expect(mockEmailDriver.send).not.toHaveBeenCalled();
+      expect(mockPort.saveToken).not.toHaveBeenCalled();
     });
 
     it('should send before saving token', async () => {
       const callOrder: string[] = [];
+
       mockEmailDriver.send.mockImplementationOnce(async () => {
         callOrder.push('send');
       });
+
       mockPort.saveToken.mockImplementationOnce(async () => {
         callOrder.push('saveToken');
       });
@@ -181,51 +220,88 @@ describe('MagicLinkService', () => {
 
   describe('authenticate', () => {
     it('should authenticate and return tokens', async () => {
-      const result = await service.authenticate(
-        'test@example.com',
-        'email',
-        mockToken,
-      );
+      const result = await service.authenticate(mockToken);
 
+      expect(mockPort.getTokenData).toHaveBeenCalledWith(mockToken);
       expect(mockPort.deleteToken).toHaveBeenCalledWith(mockToken);
+      expect(mockPort.mapTargetToProfile).toHaveBeenCalledWith(
+        'email',
+        'test@example.com',
+      );
       expect(mockPort.findOrCreateUserByProfile).toHaveBeenCalledWith(
         mockProfile,
+      );
+      expect(mockCoreService.generateTokens).toHaveBeenCalledWith(
+        mockUser,
+        undefined,
       );
       expect(result).toEqual(mockTokens);
     });
 
-    it('should throw UnauthorizedException when token not found', async () => {
-      mockPort.getToken.mockResolvedValueOnce(null);
+    it('should pass request metadata when generating tokens', async () => {
+      const metadata = {
+        ip: '127.0.0.1',
+        userAgent: 'jest',
+      };
 
-      await expect(
-        service.authenticate('test@example.com', 'email', mockToken),
-      ).rejects.toThrow(UnauthorizedException);
-      expect(mockPort.deleteToken).not.toHaveBeenCalled();
+      const result = await service.authenticate(mockToken, metadata);
+
+      expect(mockCoreService.generateTokens).toHaveBeenCalledWith(
+        mockUser,
+        metadata,
+      );
+      expect(result).toEqual(mockTokens);
     });
 
-    it('should throw UnauthorizedException when target does not match', async () => {
-      mockPort.getToken.mockResolvedValueOnce('other@example.com');
+    it('should throw UnauthorizedException when token data not found', async () => {
+      mockPort.getTokenData.mockResolvedValueOnce(null);
 
-      await expect(
-        service.authenticate('test@example.com', 'email', mockToken),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.authenticate(mockToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
+
       expect(mockPort.deleteToken).not.toHaveBeenCalled();
+      expect(mockPort.findOrCreateUserByProfile).not.toHaveBeenCalled();
+      expect(mockCoreService.generateTokens).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException when token purpose is not authenticate', async () => {
+      mockPort.getTokenData.mockResolvedValueOnce({
+        target: 'test@example.com',
+        method: 'email',
+        purpose: 'resetPassword',
+      });
+
+      await expect(service.authenticate(mockToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      expect(mockPort.deleteToken).not.toHaveBeenCalled();
+      expect(mockPort.findOrCreateUserByProfile).not.toHaveBeenCalled();
+      expect(mockCoreService.generateTokens).not.toHaveBeenCalled();
     });
 
     it('should throw when mapTargetToProfile returns undefined', async () => {
       mockPort.mapTargetToProfile.mockReturnValueOnce(undefined);
 
-      await expect(
-        service.authenticate('test@example.com', 'email', mockToken),
-      ).rejects.toThrow('[brkpt-auth] mapTargetToProfile returned undefined');
+      await expect(service.authenticate(mockToken)).rejects.toThrow(
+        '[brkpt-auth] mapTargetToProfile returned undefined',
+      );
+
+      expect(mockPort.deleteToken).toHaveBeenCalledWith(mockToken);
+      expect(mockPort.findOrCreateUserByProfile).not.toHaveBeenCalled();
+      expect(mockCoreService.generateTokens).not.toHaveBeenCalled();
     });
 
     it('should emit sign-in event', async () => {
-      await service.authenticate('test@example.com', 'email', mockToken);
+      await service.authenticate(mockToken);
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.magic-link.sign-in',
-        expect.objectContaining({ feature: 'magic-link', userId: 1 }),
+        expect.objectContaining({
+          feature: 'magic-link',
+          userId: 1,
+        }),
       );
     });
 
@@ -235,20 +311,22 @@ describe('MagicLinkService', () => {
         created: true,
       });
 
-      await service.authenticate('test@example.com', 'email', mockToken);
+      await service.authenticate(mockToken);
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.magic-link.sign-up',
-        expect.objectContaining({ feature: 'magic-link', userId: 1 }),
+        expect.objectContaining({
+          feature: 'magic-link',
+          userId: 1,
+        }),
       );
     });
 
     it('should not emit event when authentication fails', async () => {
-      mockPort.getToken.mockResolvedValueOnce(null);
+      mockPort.getTokenData.mockResolvedValueOnce(null);
 
-      await expect(
-        service.authenticate('test@example.com', 'email', mockToken),
-      ).rejects.toThrow();
+      await expect(service.authenticate(mockToken)).rejects.toThrow();
+
       expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
     });
   });
@@ -259,10 +337,25 @@ describe('MagicLinkService', () => {
         target: 'test@example.com',
         strategy: 'magic-link',
         method: 'email',
-        feature: 'verifyEmail',
+        purpose: 'verifyEmail',
       });
 
-      expect(mockEmailDriver.send).toHaveBeenCalled();
+      expect(mockEmailDriver.send).toHaveBeenCalledWith(
+        'test@example.com',
+        expect.stringContaining('localhost:3000/auth/verify-email/verify'),
+        'verifyEmail',
+      );
+
+      expect(mockPort.saveToken).toHaveBeenCalledWith(
+        mockToken,
+        {
+          target: 'test@example.com',
+          method: 'email',
+          purpose: 'verifyEmail',
+        },
+        5 * 60 * 1000,
+      );
+
       expect(result).toBe(true);
     });
 
@@ -271,22 +364,32 @@ describe('MagicLinkService', () => {
         target: 'test@example.com',
         strategy: 'otp',
         method: 'email',
-        feature: 'verifyEmail',
+        purpose: 'verifyEmail',
       });
 
       expect(mockEmailDriver.send).not.toHaveBeenCalled();
+      expect(mockPort.saveToken).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
   });
 
   describe('handleVerificationVerify', () => {
     it('should verify token and return true when strategy is magic-link', async () => {
+      mockPort.getTokenData.mockResolvedValueOnce({
+        target: 'test@example.com',
+        method: 'email',
+        purpose: 'verifyEmail',
+      });
+
       const result = await service.handleVerificationVerify({
         target: 'test@example.com',
         strategy: 'magic-link',
+        method: 'email',
+        purpose: 'verifyEmail',
         proof: mockToken,
       });
 
+      expect(mockPort.getTokenData).toHaveBeenCalledWith(mockToken);
       expect(mockPort.deleteToken).toHaveBeenCalledWith(mockToken);
       expect(result).toBe(true);
     });
@@ -295,36 +398,90 @@ describe('MagicLinkService', () => {
       const result = await service.handleVerificationVerify({
         target: 'test@example.com',
         strategy: 'otp',
+        method: 'email',
+        purpose: 'verifyEmail',
         proof: mockToken,
       });
 
-      expect(mockPort.getToken).not.toHaveBeenCalled();
+      expect(mockPort.getTokenData).not.toHaveBeenCalled();
+      expect(mockPort.deleteToken).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
 
-    it('should throw UnauthorizedException when token is invalid', async () => {
-      mockPort.getToken.mockResolvedValueOnce(null);
+    it('should throw UnauthorizedException when token data is invalid', async () => {
+      mockPort.getTokenData.mockResolvedValueOnce(null);
 
       await expect(
         service.handleVerificationVerify({
           target: 'test@example.com',
           strategy: 'magic-link',
+          method: 'email',
+          purpose: 'verifyEmail',
           proof: mockToken,
         }),
       ).rejects.toThrow(UnauthorizedException);
+
       expect(mockPort.deleteToken).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException when target does not match', async () => {
-      mockPort.getToken.mockResolvedValueOnce('other@example.com');
+      mockPort.getTokenData.mockResolvedValueOnce({
+        target: 'other@example.com',
+        method: 'email',
+        purpose: 'verifyEmail',
+      });
 
       await expect(
         service.handleVerificationVerify({
           target: 'test@example.com',
           strategy: 'magic-link',
+          method: 'email',
+          purpose: 'verifyEmail',
           proof: mockToken,
         }),
       ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPort.deleteToken).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException when method does not match', async () => {
+      mockPort.getTokenData.mockResolvedValueOnce({
+        target: 'test@example.com',
+        method: 'sms',
+        purpose: 'verifyEmail',
+      });
+
+      await expect(
+        service.handleVerificationVerify({
+          target: 'test@example.com',
+          strategy: 'magic-link',
+          method: 'email',
+          purpose: 'verifyEmail',
+          proof: mockToken,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPort.deleteToken).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException when purpose does not match', async () => {
+      mockPort.getTokenData.mockResolvedValueOnce({
+        target: 'test@example.com',
+        method: 'email',
+        purpose: 'resetPassword',
+      });
+
+      await expect(
+        service.handleVerificationVerify({
+          target: 'test@example.com',
+          strategy: 'magic-link',
+          method: 'email',
+          purpose: 'verifyEmail',
+          proof: mockToken,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPort.deleteToken).not.toHaveBeenCalled();
     });
   });
 });

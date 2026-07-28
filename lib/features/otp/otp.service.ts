@@ -12,7 +12,7 @@ import {
   RequestMetadata,
   SignInEvent,
   SignUpEvent,
-  VerificationFeature,
+  VerificationPurpose,
   type VerificationSendEvent,
   type VerificationVerifyEvent,
 } from '../../common/interfaces';
@@ -47,7 +47,11 @@ export class OtpService {
     return Math.floor(min + Math.random() * (max - min + 1)).toString();
   }
 
-  async send(target: string, method: string, feature?: VerificationFeature) {
+  async send(
+    target: string,
+    method: string,
+    purpose: VerificationPurpose = 'authenticate',
+  ) {
     const driver = this.drivers.get(method);
     if (!driver) {
       throw new BadRequestException(`Unsupported OTP method: ${method}`);
@@ -55,32 +59,27 @@ export class OtpService {
 
     const code = this.generateCode();
 
-    await driver.send(target, code, feature);
+    await driver.send(target, code, purpose);
     await this.port.saveCode(
       target,
-      code,
+      { code, method, purpose },
       parseDurationToMs(this.options.otp!.expiresIn),
     );
   }
 
-  async authenticate(
-    target: string,
-    method: string,
-    code: string,
-    metadata?: RequestMetadata,
-  ) {
-    const savedCode = await this.port.getCode(target);
-    if (!savedCode || savedCode !== code) {
+  async authenticate(target: string, code: string, metadata?: RequestMetadata) {
+    const data = await this.port.getCodeData(target);
+    if (!data || data.code !== code || data.purpose !== 'authenticate') {
       throw new UnauthorizedException('Invalid or expired OTP code');
     }
 
     await this.port.deleteCode(target);
 
-    const profile = this.port.mapTargetToProfile(method, target);
+    const profile = this.port.mapTargetToProfile(data.method, target);
     if (!profile) {
       throw new Error(
         '[brkpt-auth] mapTargetToProfile returned undefined for method: ' +
-          method,
+          data.method,
       );
     }
 
@@ -111,12 +110,12 @@ export class OtpService {
     target,
     strategy,
     method,
-    feature,
+    purpose,
   }: VerificationSendEvent) {
     if (strategy !== 'otp') {
       return;
     }
-    await this.send(target, method, feature);
+    await this.send(target, method, purpose);
     return true;
   }
 
@@ -124,14 +123,21 @@ export class OtpService {
   async handleVerificationVerify({
     target,
     strategy,
+    method,
+    purpose,
     proof,
   }: VerificationVerifyEvent) {
     if (strategy !== 'otp') {
       return;
     }
 
-    const savedCode = await this.port.getCode(target);
-    if (!savedCode || savedCode !== proof) {
+    const data = await this.port.getCodeData(target);
+    if (
+      !data ||
+      data.code !== proof ||
+      data.method !== method ||
+      data.purpose !== purpose
+    ) {
       throw new UnauthorizedException('Invalid or expired OTP code');
     }
 

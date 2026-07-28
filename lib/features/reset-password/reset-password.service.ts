@@ -38,7 +38,7 @@ export class ResetPasswordService {
         target,
         strategy,
         method,
-        feature: 'resetPassword',
+        purpose: 'resetPassword',
       } satisfies VerificationSendEvent,
     );
     if (!results.some((r) => r === true)) {
@@ -66,6 +66,8 @@ export class ResetPasswordService {
       {
         target,
         strategy,
+        method,
+        purpose: 'resetPassword',
         proof,
       } satisfies VerificationVerifyEvent,
     );

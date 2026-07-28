@@ -54,7 +54,7 @@ describe('ResetPasswordService', () => {
           target: 'test@example.com',
           strategy: 'otp',
           method: 'email',
-          feature: 'resetPassword',
+          purpose: 'resetPassword',
         },
       );
     });
@@ -94,6 +94,27 @@ describe('ResetPasswordService', () => {
       expect(mockPort.updatePassword).toHaveBeenCalledWith(
         mockUser,
         'newPassword',
+      );
+    });
+
+    it('should emit verification.verify event with correct payload', async () => {
+      await service.reset(
+        'test@example.com',
+        'otp',
+        'email',
+        '123456',
+        'newPassword',
+      );
+
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        'brkpt-auth.verification.verify',
+        {
+          target: 'test@example.com',
+          strategy: 'otp',
+          method: 'email',
+          purpose: 'resetPassword',
+          proof: '123456',
+        },
       );
     });
 

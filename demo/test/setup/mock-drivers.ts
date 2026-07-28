@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { VerificationFeature } from '../../src/brkpt-auth/common/interfaces';
+import { VerificationPurpose } from '../../src/brkpt-auth/common/interfaces';
 import { MagicLinkDriver } from '../../src/brkpt-auth/features/magic-link/magic-link.driver';
 import { OtpDriver } from '../../src/brkpt-auth/features/otp/otp.driver';
 
@@ -9,14 +9,16 @@ export class MockEmailOtpDriver implements OtpDriver {
   readonly method = 'email';
   private lastCode: string | null = null;
   private lastTarget: string | null = null;
+  private lastPurpose: VerificationPurpose | null = null;
 
   send(
     target: string,
     code: string,
-    _feature?: VerificationFeature,
+    purpose: VerificationPurpose,
   ): Promise<void> {
     this.lastCode = code;
     this.lastTarget = target;
+    this.lastPurpose = purpose;
     return Promise.resolve();
   }
 
@@ -28,9 +30,14 @@ export class MockEmailOtpDriver implements OtpDriver {
     return this.lastTarget;
   }
 
+  getLastPurpose(): VerificationPurpose | null {
+    return this.lastPurpose;
+  }
+
   reset(): void {
     this.lastCode = null;
     this.lastTarget = null;
+    this.lastPurpose = null;
   }
 }
 
@@ -38,14 +45,22 @@ export class MockEmailOtpDriver implements OtpDriver {
 export class MockEmailMagicLinkDriver implements MagicLinkDriver {
   readonly method = 'email';
   private lastLink: string | null = null;
+  private lastTarget: string | null = null;
+  private lastPurpose: VerificationPurpose | null = null;
 
   send(
-    _target: string,
+    target: string,
     link: string,
-    _feature?: VerificationFeature,
+    purpose: VerificationPurpose,
   ): Promise<void> {
     this.lastLink = link;
+    this.lastTarget = target;
+    this.lastPurpose = purpose;
     return Promise.resolve();
+  }
+
+  getLastLink(): string | null {
+    return this.lastLink;
   }
 
   getLastToken(): string | null {
@@ -55,12 +70,16 @@ export class MockEmailMagicLinkDriver implements MagicLinkDriver {
   }
 
   getLastTarget(): string | null {
-    if (!this.lastLink) return null;
-    const url = new URL(this.lastLink);
-    return url.searchParams.get('target');
+    return this.lastTarget;
+  }
+
+  getLastPurpose(): VerificationPurpose | null {
+    return this.lastPurpose;
   }
 
   reset(): void {
     this.lastLink = null;
+    this.lastTarget = null;
+    this.lastPurpose = null;
   }
 }
