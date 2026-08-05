@@ -58,6 +58,11 @@ export class MagicLinkService {
     }
 
     const callbackUrl = this.options.magicLink!.callbackUrls[purpose];
+    if (!callbackUrl) {
+      throw new Error(
+        `[brkpt-auth] Missing magic link callback URL for purpose: ${purpose}`,
+      );
+    }
 
     const token = randomUUID();
     const link = `${callbackUrl}?token=${encodeURIComponent(token)}`;

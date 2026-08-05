@@ -36,7 +36,9 @@ export interface BrkptAuthModuleOptions {
   };
   magicLink?: {
     expiresIn: ExpiresIn;
-    callbackUrls: Record<VerificationPurpose, string>;
+    callbackUrls: {
+      authenticate: string;
+    } & Partial<Record<Exclude<VerificationPurpose, 'authenticate'>, string>>;
     emailClient?: EmailClient;
   };
 }
