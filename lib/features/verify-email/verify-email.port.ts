@@ -4,6 +4,6 @@ export const BRKPT_AUTH_VERIFY_EMAIL_PORT = Symbol(
 
 export interface VerifyEmailPort {
   isVerified(payload: Record<string, unknown>): Promise<boolean>;
-  markVerified(payload: Record<string, unknown>): Promise<void>;
+  markVerified(payload: Record<string, unknown>, target: string): Promise<void>;
   extractUserIdFromJwtPayload(payload: Record<string, unknown>): unknown;
 }

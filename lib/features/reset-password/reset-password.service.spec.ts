@@ -20,7 +20,22 @@ const mockPort: jest.Mocked<ResetPasswordPort> = {
 };
 
 const mockEventEmitter = {
-  emitAsync: jest.fn().mockResolvedValue([true]),
+  emitAsync: jest.fn().mockImplementation(async (event: string) => {
+    if (event === 'brkpt-auth.verification.send') {
+      return [true];
+    }
+
+    if (event === 'brkpt-auth.verification.verify') {
+      return [
+        {
+          target: 'test@example.com',
+          method: 'email',
+        },
+      ];
+    }
+
+    return [];
+  }),
 };
 
 describe('ResetPasswordService', () => {
@@ -78,14 +93,8 @@ describe('ResetPasswordService', () => {
   });
 
   describe('reset', () => {
-    it('should find user, verify proof and reset password', async () => {
-      await service.reset(
-        'test@example.com',
-        'otp',
-        'email',
-        '123456',
-        'newPassword',
-      );
+    it('should verify proof, find user and reset password', async () => {
+      await service.reset('otp', '123456', 'newPassword', 'test@example.com');
 
       expect(mockPort.findUserByTarget).toHaveBeenCalledWith(
         'email',
@@ -98,20 +107,13 @@ describe('ResetPasswordService', () => {
     });
 
     it('should emit verification.verify event with correct payload', async () => {
-      await service.reset(
-        'test@example.com',
-        'otp',
-        'email',
-        '123456',
-        'newPassword',
-      );
+      await service.reset('otp', '123456', 'newPassword', 'test@example.com');
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.verification.verify',
         {
           target: 'test@example.com',
           strategy: 'otp',
-          method: 'email',
           purpose: 'resetPassword',
           proof: '123456',
         },
@@ -122,15 +124,9 @@ describe('ResetPasswordService', () => {
       mockPort.findUserByTarget.mockResolvedValueOnce(null);
 
       await expect(
-        service.reset(
-          'test@example.com',
-          'otp',
-          'email',
-          '123456',
-          'newPassword',
-        ),
+        service.reset('otp', '123456', 'newPassword', 'test@example.com'),
       ).rejects.toThrow(UnauthorizedException);
-      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
+
       expect(mockPort.updatePassword).not.toHaveBeenCalled();
     });
 
@@ -139,46 +135,40 @@ describe('ResetPasswordService', () => {
 
       await expect(
         service.reset(
-          'test@example.com',
           'unsupported',
-          'email',
           '123456',
           'newPassword',
+          'test@example.com',
         ),
       ).rejects.toThrow(BadRequestException);
       expect(mockPort.updatePassword).not.toHaveBeenCalled();
     });
 
-    it('should find user before verifying proof to avoid consuming verification code', async () => {
+    it('should verify proof before finding user', async () => {
       const callOrder: string[] = [];
+
+      mockEventEmitter.emitAsync.mockImplementationOnce(async () => {
+        callOrder.push('verify');
+        return [
+          {
+            target: 'test@example.com',
+            method: 'email',
+          },
+        ];
+      });
+
       mockPort.findUserByTarget.mockImplementationOnce(async () => {
         callOrder.push('findUser');
         return mockUser;
       });
-      mockEventEmitter.emitAsync.mockImplementationOnce(async () => {
-        callOrder.push('verify');
-        return [true];
-      });
 
-      await service.reset(
-        'test@example.com',
-        'otp',
-        'email',
-        '123456',
-        'newPassword',
-      );
+      await service.reset('otp', '123456', 'newPassword', 'test@example.com');
 
-      expect(callOrder).toEqual(['findUser', 'verify']);
+      expect(callOrder).toEqual(['verify', 'findUser']);
     });
 
     it('should emit revoke-others with empty sessionId to revoke all sessions', async () => {
-      await service.reset(
-        'test@example.com',
-        'otp',
-        'email',
-        '123456',
-        'newPassword',
-      );
+      await service.reset('otp', '123456', 'newPassword', 'test@example.com');
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.session.revoke-others',
@@ -187,13 +177,7 @@ describe('ResetPasswordService', () => {
     });
 
     it('should emit reset-password audit event', async () => {
-      await service.reset(
-        'test@example.com',
-        'otp',
-        'email',
-        '123456',
-        'newPassword',
-      );
+      await service.reset('otp', '123456', 'newPassword', 'test@example.com');
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.reset-password.reset',
@@ -201,19 +185,21 @@ describe('ResetPasswordService', () => {
       );
     });
 
-    it('should not emit events when user not found', async () => {
+    it('should not emit session or audit events when user not found', async () => {
       mockPort.findUserByTarget.mockResolvedValueOnce(null);
 
       await expect(
-        service.reset(
-          'test@example.com',
-          'otp',
-          'email',
-          '123456',
-          'newPassword',
-        ),
+        service.reset('otp', '123456', 'newPassword', 'test@example.com'),
       ).rejects.toThrow(UnauthorizedException);
-      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
+
+      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalledWith(
+        'brkpt-auth.session.revoke-others',
+        expect.anything(),
+      );
+      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalledWith(
+        'brkpt-auth.reset-password.reset',
+        expect.anything(),
+      );
     });
   });
 });

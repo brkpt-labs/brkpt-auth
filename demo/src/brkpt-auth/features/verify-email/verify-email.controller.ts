@@ -27,9 +27,9 @@ export class VerifyEmailController {
   ) {
     await this.verifyEmailService.verify(
       req.user!,
-      target,
       strategy,
       proof,
+      target,
       extractRequestMetadata(req),
     );
     return 'Email verified successfully';

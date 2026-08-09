@@ -58,7 +58,7 @@ export class OtpAdapter implements OtpPort<User, UserProfile> {
       email: profile.email,
       name: profile.name,
       password: '',
-      emailVerified: false,
+      verifiedEmail: null,
     });
 
     return { user, created: true };

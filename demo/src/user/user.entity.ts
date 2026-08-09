@@ -3,5 +3,5 @@ export interface User {
   email: string;
   name: string;
   password: string;
-  emailVerified: boolean;
+  verifiedEmail: string | null;
 }

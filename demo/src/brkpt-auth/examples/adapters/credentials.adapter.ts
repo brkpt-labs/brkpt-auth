@@ -28,7 +28,7 @@ export class CredentialsAdapter implements CredentialsPort<User> {
       email: dto.email,
       name: dto.name,
       password: hashedPassword,
-      emailVerified: false,
+      verifiedEmail: null,
     });
   }
 

@@ -144,11 +144,15 @@ export interface VerificationSendEvent {
 }
 
 export interface VerificationVerifyEvent {
-  target: string;
+  target?: string;
   strategy: string;
-  method: string;
   purpose: VerificationPurpose;
   proof: string;
+}
+
+export interface VerificationVerifyResult {
+  target: string;
+  method: string;
 }
 
 // Verification Data

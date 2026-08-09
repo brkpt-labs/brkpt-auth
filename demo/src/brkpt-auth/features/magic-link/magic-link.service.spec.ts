@@ -382,23 +382,22 @@ describe('MagicLinkService', () => {
       });
 
       const result = await service.handleVerificationVerify({
-        target: 'test@example.com',
         strategy: 'magic-link',
-        method: 'email',
         purpose: 'verifyEmail',
         proof: mockToken,
       });
 
       expect(mockPort.getTokenData).toHaveBeenCalledWith(mockToken);
       expect(mockPort.deleteToken).toHaveBeenCalledWith(mockToken);
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        target: 'test@example.com',
+        method: 'email',
+      });
     });
 
     it('should return undefined when strategy is not magic-link', async () => {
       const result = await service.handleVerificationVerify({
-        target: 'test@example.com',
         strategy: 'otp',
-        method: 'email',
         purpose: 'verifyEmail',
         proof: mockToken,
       });
@@ -413,49 +412,7 @@ describe('MagicLinkService', () => {
 
       await expect(
         service.handleVerificationVerify({
-          target: 'test@example.com',
           strategy: 'magic-link',
-          method: 'email',
-          purpose: 'verifyEmail',
-          proof: mockToken,
-        }),
-      ).rejects.toThrow(UnauthorizedException);
-
-      expect(mockPort.deleteToken).not.toHaveBeenCalled();
-    });
-
-    it('should throw UnauthorizedException when target does not match', async () => {
-      mockPort.getTokenData.mockResolvedValueOnce({
-        target: 'other@example.com',
-        method: 'email',
-        purpose: 'verifyEmail',
-      });
-
-      await expect(
-        service.handleVerificationVerify({
-          target: 'test@example.com',
-          strategy: 'magic-link',
-          method: 'email',
-          purpose: 'verifyEmail',
-          proof: mockToken,
-        }),
-      ).rejects.toThrow(UnauthorizedException);
-
-      expect(mockPort.deleteToken).not.toHaveBeenCalled();
-    });
-
-    it('should throw UnauthorizedException when method does not match', async () => {
-      mockPort.getTokenData.mockResolvedValueOnce({
-        target: 'test@example.com',
-        method: 'sms',
-        purpose: 'verifyEmail',
-      });
-
-      await expect(
-        service.handleVerificationVerify({
-          target: 'test@example.com',
-          strategy: 'magic-link',
-          method: 'email',
           purpose: 'verifyEmail',
           proof: mockToken,
         }),
@@ -473,15 +430,32 @@ describe('MagicLinkService', () => {
 
       await expect(
         service.handleVerificationVerify({
-          target: 'test@example.com',
           strategy: 'magic-link',
-          method: 'email',
           purpose: 'verifyEmail',
           proof: mockToken,
         }),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(mockPort.deleteToken).not.toHaveBeenCalled();
+    });
+
+    it('should return target and method from token data', async () => {
+      mockPort.getTokenData.mockResolvedValue({
+        target: 'test@example.com',
+        method: 'email',
+        purpose: 'resetPassword',
+      });
+
+      const result = await service.handleVerificationVerify({
+        strategy: 'magic-link',
+        purpose: 'resetPassword',
+        proof: mockToken,
+      });
+
+      expect(result).toEqual({
+        target: 'test@example.com',
+        method: 'email',
+      });
     });
   });
 });

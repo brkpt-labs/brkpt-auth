@@ -20,21 +20,21 @@ export class MemoryUserRepository {
         email: 'test@example.com',
         name: 'Test User',
         password: 'hashed_password',
-        emailVerified: false,
+        verifiedEmail: null,
       },
       {
         id: 2,
         email: 'verified@example.com',
         name: 'Verified User',
         password: 'hashed_password',
-        emailVerified: true,
+        verifiedEmail: 'verified@example.com',
       },
       {
         id: 3,
         email: 'other@example.com',
         name: 'Other User',
         password: 'hashed_password',
-        emailVerified: true,
+        verifiedEmail: 'other@example.com',
       },
     ];
     this.currentId = 4;

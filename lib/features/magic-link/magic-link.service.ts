@@ -16,6 +16,7 @@ import {
   VerificationPurpose,
   type VerificationSendEvent,
   type VerificationVerifyEvent,
+  VerificationVerifyResult,
 } from '../../common/interfaces';
 import { parseDurationToMs } from '../../common/utils';
 import { CoreService } from '../core/core.service';
@@ -131,27 +132,24 @@ export class MagicLinkService {
 
   @OnEvent('brkpt-auth.verification.verify', { suppressErrors: false })
   async handleVerificationVerify({
-    target,
     strategy,
-    method,
     purpose,
     proof,
-  }: VerificationVerifyEvent) {
+  }: VerificationVerifyEvent): Promise<VerificationVerifyResult | undefined> {
     if (strategy !== 'magic-link') {
       return;
     }
 
     const data = await this.port.getTokenData(proof);
-    if (
-      !data ||
-      data.target !== target ||
-      data.method !== method ||
-      data.purpose !== purpose
-    ) {
+    if (!data || data.purpose !== purpose) {
       throw new UnauthorizedException('Invalid or expired magic link');
     }
 
     await this.port.deleteToken(proof);
-    return true;
+
+    return {
+      target: data.target,
+      method: data.method,
+    };
   }
 }

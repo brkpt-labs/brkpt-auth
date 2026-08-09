@@ -22,15 +22,14 @@ export class ResetPasswordController {
   @Post('reset')
   @HttpCode(200)
   async reset(
-    @Body() { target, strategy, method, proof, newPassword }: ResetDto,
+    @Body() { target, strategy, proof, newPassword }: ResetDto,
     @Req() req: BrkptAuthRequest,
   ) {
     await this.resetPasswordService.reset(
-      target,
       strategy,
-      method,
       proof,
       newPassword,
+      target,
       extractRequestMetadata(req),
     );
     return 'Password reset successfully';

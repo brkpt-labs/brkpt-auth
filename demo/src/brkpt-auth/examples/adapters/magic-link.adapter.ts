@@ -59,7 +59,7 @@ export class MagicLinkAdapter implements MagicLinkPort<User, UserProfile> {
       email: profile.email,
       name: profile.name,
       password: '',
-      emailVerified: false,
+      verifiedEmail: null,
     });
 
     return { user, created: true };

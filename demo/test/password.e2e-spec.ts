@@ -84,7 +84,6 @@ describe('Password (e2e)', () => {
         .send({
           target: 'verified@example.com',
           strategy: 'otp',
-          method: 'email',
           proof: code,
           newPassword: 'resetpassword',
         })
@@ -111,9 +110,7 @@ describe('Password (e2e)', () => {
       await request(ctx.app.getHttpServer())
         .post('/auth/reset-password/reset')
         .send({
-          target: 'verified@example.com',
           strategy: 'magic-link',
-          method: 'email',
           proof: token,
           newPassword: 'resetpassword',
         })
@@ -132,6 +129,35 @@ describe('Password (e2e)', () => {
           target: 'notexist@example.com',
           strategy: 'otp',
           method: 'email',
+        })
+        .expect(401);
+    });
+  });
+
+  describe('Passwordless Users', () => {
+    it('should not allow users without a password to sign in with an empty password', async () => {
+      await request(ctx.app.getHttpServer())
+        .post('/auth/magic-link/send')
+        .send({
+          target: 'passwordless@example.com',
+          method: 'email',
+        })
+        .expect(200);
+
+      const token = ctx.magicLinkDriver.getLastToken();
+
+      expect(token).toBeTruthy();
+
+      await request(ctx.app.getHttpServer())
+        .get('/auth/magic-link/authenticate')
+        .query({ token })
+        .expect(200);
+
+      await request(ctx.app.getHttpServer())
+        .post('/auth/sign-in')
+        .send({
+          email: 'passwordless@example.com',
+          password: '',
         })
         .expect(401);
     });

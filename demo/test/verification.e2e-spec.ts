@@ -83,7 +83,6 @@ describe('Email Verification (e2e)', () => {
       .post('/auth/verify-email/verify')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
-        target: 'test@example.com',
         strategy: 'magic-link',
         proof: token,
       })

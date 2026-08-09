@@ -15,6 +15,7 @@ import {
   VerificationPurpose,
   type VerificationSendEvent,
   type VerificationVerifyEvent,
+  VerificationVerifyResult,
 } from '../../common/interfaces';
 import { parseDurationToMs } from '../../common/utils';
 import { CoreService } from '../core/core.service';
@@ -123,25 +124,27 @@ export class OtpService {
   async handleVerificationVerify({
     target,
     strategy,
-    method,
     purpose,
     proof,
-  }: VerificationVerifyEvent) {
+  }: VerificationVerifyEvent): Promise<VerificationVerifyResult | undefined> {
     if (strategy !== 'otp') {
       return;
     }
 
+    if (!target) {
+      throw new BadRequestException('Target is required for OTP verification');
+    }
+
     const data = await this.port.getCodeData(target);
-    if (
-      !data ||
-      data.code !== proof ||
-      data.method !== method ||
-      data.purpose !== purpose
-    ) {
+    if (!data || data.code !== proof || data.purpose !== purpose) {
       throw new UnauthorizedException('Invalid or expired OTP code');
     }
 
     await this.port.deleteCode(target);
-    return true;
+
+    return {
+      target,
+      method: data.method,
+    };
   }
 }

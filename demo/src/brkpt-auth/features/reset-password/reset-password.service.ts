@@ -12,6 +12,7 @@ import {
   SessionRevokeOthersEvent,
   VerificationSendEvent,
   VerificationVerifyEvent,
+  VerificationVerifyResult,
 } from '../../common/interfaces';
 import {
   BRKPT_AUTH_RESET_PASSWORD_PORT,
@@ -49,32 +50,37 @@ export class ResetPasswordService {
   }
 
   async reset(
-    target: string,
     strategy: string,
-    method: string,
     proof: string,
     newPassword: string,
+    target?: string,
     metadata?: RequestMetadata,
   ) {
-    const user = await this.port.findUserByTarget(method, target);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
     const results = await this.eventEmitter.emitAsync(
       'brkpt-auth.verification.verify',
       {
         target,
         strategy,
-        method,
         purpose: 'resetPassword',
         proof,
       } satisfies VerificationVerifyEvent,
     );
-    if (!results.some((r) => r === true)) {
+
+    const verification = results.find(
+      (result): result is VerificationVerifyResult => result != null,
+    );
+    if (!verification) {
       throw new BadRequestException(
         `Unsupported verification strategy: ${strategy}`,
       );
+    }
+
+    const user = await this.port.findUserByTarget(
+      verification.method,
+      verification.target,
+    );
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
     await this.port.updatePassword(user, newPassword);

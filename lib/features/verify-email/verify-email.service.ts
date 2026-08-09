@@ -5,6 +5,7 @@ import {
   RequestMetadata,
   VerificationSendEvent,
   VerificationVerifyEvent,
+  VerificationVerifyResult,
   VerifyEmailEvent,
 } from '../../common/interfaces';
 import {
@@ -39,9 +40,9 @@ export class VerifyEmailService {
 
   async verify(
     payload: Record<string, unknown>,
-    target: string,
     strategy: string,
     proof: string,
+    target?: string,
     metadata?: RequestMetadata,
   ) {
     const results = await this.eventEmitter.emitAsync(
@@ -49,18 +50,21 @@ export class VerifyEmailService {
       {
         target,
         strategy,
-        method: 'email',
         purpose: 'verifyEmail',
         proof,
       } satisfies VerificationVerifyEvent,
     );
-    if (!results.some((r) => r === true)) {
+
+    const verification = results.find(
+      (result): result is VerificationVerifyResult => result != null,
+    );
+    if (!verification) {
       throw new BadRequestException(
         `Unsupported verification strategy: ${strategy}`,
       );
     }
 
-    await this.port.markVerified(payload);
+    await this.port.markVerified(payload, verification.target);
 
     void this.eventEmitter.emitAsync('brkpt-auth.verify-email.verify', {
       userId: this.port.extractUserIdFromJwtPayload(payload),

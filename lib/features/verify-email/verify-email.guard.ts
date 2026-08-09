@@ -44,7 +44,7 @@ export class VerifyEmailGuard implements CanActivate {
     const verified = await this.port.isVerified(request.user!);
     if (!verified) {
       throw new ForbiddenException(
-        'Your account email has not been verified. Please verify your email to continue.',
+        'Your account does not have a verified email. Please verify an email to continue.',
       );
     }
 

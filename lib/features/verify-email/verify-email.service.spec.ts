@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/unbound-method */
 
 import { BadRequestException } from '@nestjs/common';
@@ -10,7 +11,11 @@ import {
 } from './verify-email.port';
 import { VerifyEmailService } from './verify-email.service';
 
-const mockPayload = { sub: 1, email: 'test@example.com', sid: 'session-1' };
+const mockPayload = {
+  sub: 1,
+  email: 'test@example.com',
+  sid: 'session-1',
+};
 
 const mockPort: jest.Mocked<VerifyEmailPort> = {
   isVerified: jest.fn().mockResolvedValue(false),
@@ -19,7 +24,22 @@ const mockPort: jest.Mocked<VerifyEmailPort> = {
 };
 
 const mockEventEmitter = {
-  emitAsync: jest.fn().mockResolvedValue([true]),
+  emitAsync: jest.fn().mockImplementation(async (event: string) => {
+    if (event === 'brkpt-auth.verification.send') {
+      return [true];
+    }
+
+    if (event === 'brkpt-auth.verification.verify') {
+      return [
+        {
+          target: 'test@example.com',
+          method: 'email',
+        },
+      ];
+    }
+
+    return [];
+  }),
 };
 
 describe('VerifyEmailService', () => {
@@ -73,20 +93,22 @@ describe('VerifyEmailService', () => {
 
   describe('verify', () => {
     it('should verify and mark user as verified', async () => {
-      await service.verify(mockPayload, 'test@example.com', 'otp', '123456');
+      await service.verify(mockPayload, 'otp', '123456', 'test@example.com');
 
-      expect(mockPort.markVerified).toHaveBeenCalledWith(mockPayload);
+      expect(mockPort.markVerified).toHaveBeenCalledWith(
+        mockPayload,
+        'test@example.com',
+      );
     });
 
     it('should emit verification.verify event with correct payload', async () => {
-      await service.verify(mockPayload, 'test@example.com', 'otp', '123456');
+      await service.verify(mockPayload, 'otp', '123456', 'test@example.com');
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.verification.verify',
         {
           target: 'test@example.com',
           strategy: 'otp',
-          method: 'email',
           purpose: 'verifyEmail',
           proof: '123456',
         },
@@ -99,16 +121,17 @@ describe('VerifyEmailService', () => {
       await expect(
         service.verify(
           mockPayload,
-          'test@example.com',
           'unsupported',
           '123456',
+          'test@example.com',
         ),
       ).rejects.toThrow(BadRequestException);
+
       expect(mockPort.markVerified).not.toHaveBeenCalled();
     });
 
     it('should emit verify-email audit event after marking verified', async () => {
-      await service.verify(mockPayload, 'test@example.com', 'otp', '123456');
+      await service.verify(mockPayload, 'otp', '123456', 'test@example.com');
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         'brkpt-auth.verify-email.verify',
@@ -120,7 +143,7 @@ describe('VerifyEmailService', () => {
       mockEventEmitter.emitAsync.mockResolvedValueOnce([undefined]);
 
       await expect(
-        service.verify(mockPayload, 'test@example.com', 'otp', 'wrong'),
+        service.verify(mockPayload, 'otp', 'wrong', 'test@example.com'),
       ).rejects.toThrow(BadRequestException);
 
       expect(mockPort.markVerified).not.toHaveBeenCalled();

@@ -10,11 +10,13 @@ export class VerifyEmailAdapter implements VerifyEmailPort {
 
   async isVerified(payload: AuthJwtPayload): Promise<boolean> {
     const user = await this.userRepo.findOne((u) => u.id === payload.sub);
-    return user?.emailVerified ?? false;
+    return user?.verifiedEmail != null;
   }
 
-  async markVerified(payload: AuthJwtPayload): Promise<void> {
-    await this.userRepo.update(payload.sub, { emailVerified: true });
+  async markVerified(payload: AuthJwtPayload, target: string): Promise<void> {
+    await this.userRepo.update(payload.sub, {
+      verifiedEmail: target,
+    });
   }
 
   extractUserIdFromJwtPayload(payload: AuthJwtPayload): number {

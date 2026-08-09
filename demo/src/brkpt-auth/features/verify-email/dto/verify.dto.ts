@@ -1,5 +1,5 @@
 export class VerifyDto {
-  target!: string;
+  target?: string;
   strategy!: string;
   proof!: string;
 }

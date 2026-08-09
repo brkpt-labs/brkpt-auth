@@ -366,21 +366,22 @@ describe('OtpService', () => {
       const result = await service.handleVerificationVerify({
         target: 'test@example.com',
         strategy: 'otp',
-        method: 'email',
         purpose: 'verifyEmail',
         proof: '123456',
       });
 
       expect(mockPort.getCodeData).toHaveBeenCalledWith('test@example.com');
       expect(mockPort.deleteCode).toHaveBeenCalledWith('test@example.com');
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        target: 'test@example.com',
+        method: 'email',
+      });
     });
 
     it('should return undefined when strategy is not otp', async () => {
       const result = await service.handleVerificationVerify({
         target: 'test@example.com',
         strategy: 'magic-link',
-        method: 'email',
         purpose: 'verifyEmail',
         proof: '123456',
       });
@@ -397,7 +398,6 @@ describe('OtpService', () => {
         service.handleVerificationVerify({
           target: 'test@example.com',
           strategy: 'otp',
-          method: 'email',
           purpose: 'verifyEmail',
           proof: '123456',
         }),
@@ -411,29 +411,8 @@ describe('OtpService', () => {
         service.handleVerificationVerify({
           target: 'test@example.com',
           strategy: 'otp',
-          method: 'email',
           purpose: 'verifyEmail',
           proof: 'wrong',
-        }),
-      ).rejects.toThrow(UnauthorizedException);
-
-      expect(mockPort.deleteCode).not.toHaveBeenCalled();
-    });
-
-    it('should throw UnauthorizedException when method does not match', async () => {
-      mockPort.getCodeData.mockResolvedValueOnce({
-        code: '123456',
-        method: 'sms',
-        purpose: 'verifyEmail',
-      });
-
-      await expect(
-        service.handleVerificationVerify({
-          target: 'test@example.com',
-          strategy: 'otp',
-          method: 'email',
-          purpose: 'verifyEmail',
-          proof: '123456',
         }),
       ).rejects.toThrow(UnauthorizedException);
 
@@ -451,13 +430,22 @@ describe('OtpService', () => {
         service.handleVerificationVerify({
           target: 'test@example.com',
           strategy: 'otp',
-          method: 'email',
           purpose: 'verifyEmail',
           proof: '123456',
         }),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(mockPort.deleteCode).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when target is missing', async () => {
+      await expect(
+        service.handleVerificationVerify({
+          strategy: 'otp',
+          purpose: 'resetPassword',
+          proof: '123456',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });
