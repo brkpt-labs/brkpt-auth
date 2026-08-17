@@ -1,31 +1,35 @@
 # brkpt-auth
 
+English | [简体中文](./README.zh.md)
+
 Transparent, composable, portable, hexagonal authentication for NestJS.
 
 ---
 
 ## Philosophy
 
-There are three common approaches to authentication:
+There are four common ways to add authentication to a project, and each has a real cost.
 
-**Managed services**: Provide an API. Auth logic and user data are fully hosted on the vendor's side. Low integration cost, but you give up data ownership and risk vendor lock-in. Core design decisions — database schema, auth state management approach (traditional session, stateless JWT, or stateful JWT), token transport (cookie or header), JWT payload structure — are all predetermined by the vendor. Your project has to be built around their design. Implementation details are completely opaque, leaving very little room for customization. Think of it as a black box in the cloud.
+**Managed services** run authentication as a hosted API. Integration is fast, but the vendor controls your database schema, your session model (traditional session, stateless JWT, or stateful JWT), your token transport (cookie or header), and your JWT payload shape, and none of it is visible from your side. You also give up data ownership and take on vendor lock-in.
 
-**Self-hosted libraries**: Provide an npm package. You deploy on your own infrastructure. Data ownership is preserved. But the same fundamental problem exists: the core design is fixed and heavily abstracted, and your project still has to be built around their conventions. Customization requires understanding their internal mental model first. Anything outside their internal structure is difficult or impossible to implement, and plugin-based solutions also have limited effect. The code exists locally in node_modules, but the internals are still complex and not practical to modify or maintain. Think of it as a black box on your own machine.
+**Self-hosted libraries** ship as an npm package that runs on your own infrastructure, so your data stays with you. The core design is still fixed and heavily abstracted: customizing anything means first learning the library's internal model, and requirements that fall outside that model are difficult or impossible to meet, even with plugins. The code lives locally in `node_modules`, but that doesn't make the internals any easier to read or change.
 
-**Auth boilerplates**: Provide full source code. The code is yours, but it is opinionated. Written for a specific user model, database, and project structure, with strong design assumptions and a set of fixed configurations baked in. Anything that does not match your project needs to be reworked. Most boilerplates claim to be "out of the box, well-architected, easy to extend, fully production-ready". But in practice, the reality is often far from that: tight coupling, unclear architecture boundaries, redundant structure, poor readability, questionable practices, missing features, hard-to-debug issues, difficult to build on. And even after finishing a project on top of one, the next project goes through the same process all over again.
+**Auth boilerplates** give you the full source code, written for one specific user model, database, and project structure. Anything that doesn't match your project has to be reworked. Boilerplates are often advertised as production-ready and easy to extend, but building on one commonly surfaces tight coupling, unclear architectural boundaries, redundant structure, poor readability, and missing features, and problems like these are harder to debug because the code wasn't designed by you. The next project repeats the same evaluation and rework.
 
-There is also the most common approach: not relying on any service or framework, and implementing everything yourself. Full control, but the cost is real: no shared conventions or standards, hard to evaluate whether your implementation follows best practices, logic tends to scatter across the codebase, some features are hard to implement, new requirements may trigger large-scale architectural changes, and every new project repeats the same work.
+**Rolling your own** gives you full control, at a real cost: there's no shared convention to check your implementation against, logic tends to spread across the codebase, some capabilities are hard to implement cleanly, and a new requirement can force a large architectural change instead of a small addition. Every new project starts from the same foundation.
 
-brkpt-auth takes a different approach:
+## Why brkpt-auth
 
-- **Transparent** — full source code installed directly into your project, no compiled packages or hidden behavior, clear and readable structure, easy to modify.
-- **Composable** — add only what you need, features are independent and communicate through an event emitter with loose coupling.
-- **Non-invasive** — no assumptions about your database schema, user model, or JWT payload structure. Through the port-adapter pattern, implement the corresponding interfaces to plug brkpt-auth into your project, no changes to your existing code required.
-- **Portable** — business logic and adapters are separate. When moving to a new project, the core logic comes with you, only the adapters need to be rewritten.
-- **NestJS-native** — built for NestJS from the ground up, native modules, guards, decorators, and event emitter throughout, no compatibility shims.
-- **Hexagonal architecture** — services hold the fixed business logic, ports define the interfaces, adapters are yours to implement, the boundary is always clear.
+brkpt-auth keeps the full source code in your project and separates business logic from infrastructure through ports and adapters, so your database schema, user model, and JWT payload stay under your control:
 
-Getting started is simple: initialize with `brkpt-cli`, implement your adapters, register in your `AppModule`. Each adapter only requires implementing a few typed methods — usually a direct call into your existing implementation.
+- **Transparent** — full source code installed directly into your project. No compiled packages, no hidden behavior, and a structure that's easy to inspect and modify.
+- **Composable** — add only what you need. Independent features communicate through events with loose coupling.
+- **Non-invasive** — no assumptions about your database schema, user model, or JWT payload. Implement the required ports and integrate without restructuring your application.
+- **Portable** — business logic stays independent from adapters. Move the authentication logic into another project and replace only the adapters.
+- **NestJS-native** — built around NestJS modules, dependency injection, guards, decorators, and providers from the beginning.
+- **Hexagonal architecture** — services contain business logic, ports define contracts, and adapters remain fully under your control.
+
+Getting started is simple: `brkpt-cli` installs the source code into your project. You implement the adapters and list them in `features.ts`; `BrkptAuthModule`, registered once in your `AppModule`, picks them up automatically. Most adapter methods are simple field mappings or direct calls into your existing code.
 
 ## Features
 
@@ -61,7 +65,7 @@ pnpm install
 pnpm start:dev
 ```
 
-The demo uses an in-memory user store, but requires a local Redis instance. E2E tests use in-memory mocks for both Redis and email — no external services needed.
+The demo uses an in-memory user store but requires a local Redis instance. E2E tests mock both Redis and email in memory, so no external services are required.
 
 ```bash
 pnpm test        # unit tests
