@@ -2,7 +2,7 @@
 
 English | [简体中文](./README.zh.md)
 
-Transparent, composable, portable, hexagonal authentication for NestJS.
+Transparent, composable, portable, hexagonal authentication for NestJS. Not a boilerplate. Not a library.
 
 ---
 
@@ -20,16 +20,26 @@ There are four common ways to add authentication to a project, and each has a re
 
 ## Why brkpt-auth
 
-brkpt-auth keeps the full source code in your project and separates business logic from infrastructure through ports and adapters, so your database schema, user model, and JWT payload stay under your control:
+brkpt-auth is not a boilerplate and not a library. It's structured around interfaces you implement yourself, not an opinionated default that just runs:
 
-- **Transparent** — full source code installed directly into your project. No compiled packages, no hidden behavior, and a structure that's easy to inspect and modify.
-- **Composable** — add only what you need. Independent features communicate through events with loose coupling.
-- **Non-invasive** — no assumptions about your database schema, user model, or JWT payload. Implement the required ports and integrate without restructuring your application.
-- **Portable** — business logic stays independent from adapters. Move the authentication logic into another project and replace only the adapters.
+- **Transparent** — full source code installed directly into your project. No compiled packages, no hidden behavior.
+- **Composable** — independent features. Add only what you need.
+- **Non-invasive** — no assumptions about your database schema, user model, or JWT payload.
+- **Portable** — business logic stays independent from adapters. Move to another project by swapping only the adapters.
 - **NestJS-native** — built around NestJS modules, dependency injection, guards, decorators, and providers from the beginning.
-- **Hexagonal architecture** — services contain business logic, ports define contracts, and adapters remain fully under your control.
+- **Hexagonal** — services hold business logic, ports define contracts, adapters stay fully under your control. No nested domain/infrastructure layers to dig through.
 
-Getting started is simple: `brkpt-cli` installs the source code into your project. You implement the adapters and list them in `features.ts`; `BrkptAuthModule`, registered once in your `AppModule`, picks them up automatically. Most adapter methods are simple field mappings or direct calls into your existing code.
+## How it works
+
+The service depends on an abstract interface, a port, which you implement as an adapter. That's the only place your infrastructure touches the auth logic. Features don't depend on each other besides `core`, so you add only what you need without touching the rest. `BrkptAuthModule`, registered once in your `AppModule`, wires everything together automatically instead of you registering and wiring providers by hand.
+
+This keeps it from becoming bloated like a boilerplate. You get clear points to customize, and it stays easy to get started with.
+
+`brkpt-cli` installs the source code into your project. You implement the adapters and list them in `features.ts`; most adapter methods are simple field mappings or direct calls into your existing code.
+
+## How to use it
+
+Each feature follows the same flow: add it with `brkpt-cli`, implement its adapter, and register it in `features.ts`. See the [get started guide](https://brkpt.com/auth/guides/get-started/) for the full walkthrough with code.
 
 ## Features
 
