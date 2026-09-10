@@ -62,7 +62,7 @@ brkpt-auth 不是样板项目，也不是库。它围绕你自己实现的接口
 ```plain
 brkpt-auth/
  ┣ demo/     # 完整可运行的 NestJS demo 项目
- ┗ lib/      # brkpt-cli 分发的源码模板
+ ┗ lib/      # 供 brkpt-cli 拉取安装到你项目中的源代码
 ```
 
 ### 运行 demo

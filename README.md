@@ -62,7 +62,7 @@ Each feature follows the same flow: add it with `brkpt-cli`, implement its adapt
 ```plain
 brkpt-auth/
  ┣ demo/     # Fully working NestJS demo project
- ┗ lib/      # Source templates distributed by brkpt-cli
+ ┗ lib/      # Source code for brkpt-cli to scaffold into your project
 ```
 
 ### Running the demo
